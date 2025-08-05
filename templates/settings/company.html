@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración de Empresa - SM2 Cloud{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-building"></i> Configuración de Empresa</h2>
+        </div>
+
+        <form method="POST" action="{{ url_for('settings.company') }}">
+            <div class="row">
+                <!-- Company Information -->
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-info-circle"></i> Información de la Empresa</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="company_name" class="form-label">Nombre de la Empresa *</label>
+                                    <input type="text" class="form-control" id="company_name" name="company_name" 
+                                           value="{{ settings.get('company_name', '') }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="company_document" class="form-label">NIT / RUT</label>
+                                    <input type="text" class="form-control" id="company_document" name="company_document" 
+                                           value="{{ settings.get('company_document', '') }}">
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="company_phone" class="form-label">Teléfono</label>
+                                    <input type="tel" class="form-control" id="company_phone" name="company_phone" 
+                                           value="{{ settings.get('company_phone', '') }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="company_email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="company_email" name="company_email" 
+                                           value="{{ settings.get('company_email', '') }}">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="company_address" class="form-label">Dirección</label>
+                                <textarea class="form-control" id="company_address" name="company_address" rows="3">{{ settings.get('company_address', '') }}</textarea>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="company_city" class="form-label">Ciudad</label>
+                                    <input type="text" class="form-control" id="company_city" name="company_city" 
+                                           value="{{ settings.get('company_city', '') }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="company_country" class="form-label">País</label>
+                                    <input type="text" class="form-control" id="company_country" name="company_country" 
+                                           value="{{ settings.get('company_country', '') }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Invoice Settings -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-file-invoice"></i> Configuración de Facturas</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="invoice_prefix" class="form-label">Prefijo de Factura</label>
+                                    <input type="text" class="form-control" id="invoice_prefix" name="invoice_prefix" 
+                                           value="{{ settings.get('invoice_prefix', 'FAC') }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="invoice_counter" class="form-label">Próximo Número</label>
+                                    <input type="number" class="form-control" id="invoice_counter" name="invoice_counter" 
+                                           value="{{ settings.get('invoice_counter', 1) }}" min="1">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="invoice_footer" class="form-label">Pie de Factura</label>
+                                <textarea class="form-control" id="invoice_footer" name="invoice_footer" rows="3">{{ settings.get('invoice_footer', 'Gracias por su compra') }}</textarea>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="auto_send_invoice" name="auto_send_invoice" 
+                                               {{ 'checked' if settings.get('auto_send_invoice') == 'true' else '' }}>
+                                        <label class="form-check-label" for="auto_send_invoice">
+                                            Enviar factura automáticamente por email
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="show_taxes" name="show_taxes" 
+                                               {{ 'checked' if settings.get('show_taxes') == 'true' else '' }}>
+                                        <label class="form-check-label" for="show_taxes">
+                                            Mostrar impuestos en facturas
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Settings -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-cogs"></i> Configuración del Sistema</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="default_currency" class="form-label">Moneda por Defecto</label>
+                                    <select class="form-select" id="default_currency" name="default_currency">
+                                        <option value="COP" {{ 'selected' if settings.get('default_currency') == 'COP' else '' }}>COP - Peso Colombiano</option>
+                                        <option value="USD" {{ 'selected' if settings.get('default_currency') == 'USD' else '' }}>USD - Dólar Americano</option>
+                                        <option value="EUR" {{ 'selected' if settings.get('default_currency') == 'EUR' else '' }}>EUR - Euro</option>
+                                        <option value="MXN" {{ 'selected' if settings.get('default_currency') == 'MXN' else '' }}>MXN - Peso Mexicano</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="default_language" class="form-label">Idioma por Defecto</label>
+                                    <select class="form-select" id="default_language" name="default_language">
+                                        <option value="es" {{ 'selected' if settings.get('default_language') == 'es' else '' }}>Español</option>
+                                        <option value="en" {{ 'selected' if settings.get('default_language') == 'en' else '' }}>English</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="low_stock_alert" class="form-label">Alerta Stock Bajo</label>
+                                    <input type="number" class="form-control" id="low_stock_alert" name="low_stock_alert" 
+                                           value="{{ settings.get('low_stock_alert', 10) }}" min="0">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="backup_frequency" class="form-label">Frecuencia de Respaldo</label>
+                                    <select class="form-select" id="backup_frequency" name="backup_frequency">
+                                        <option value="daily" {{ 'selected' if settings.get('backup_frequency') == 'daily' else '' }}>Diario</option>
+                                        <option value="weekly" {{ 'selected' if settings.get('backup_frequency') == 'weekly' else '' }}>Semanal</option>
+                                        <option value="monthly" {{ 'selected' if settings.get('backup_frequency') == 'monthly' else '' }}>Mensual</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logo and Theme -->
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-image"></i> Logo y Apariencia</h5>
+                        </div>
+                        <div class="card-body text-center">
+                            <div class="mb-3">
+                                <img src="{{ url_for('static', filename='img/logo.png') if settings.get('company_logo') else url_for('static', filename='img/default-logo.svg') }}" 
+                                     alt="Logo" class="img-fluid rounded" style="max-height: 120px;" id="logoPreview">
+                            </div>
+                            <div class="mb-3">
+                                <input type="file" class="form-control" id="company_logo" name="company_logo" accept="image/*">
+                                <div class="form-text">Formatos: PNG, JPG. Tamaño máximo: 2MB</div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="default_theme" class="form-label">Tema por Defecto</label>
+                                <select class="form-select" id="default_theme" name="default_theme">
+                                    <option value="blue" {{ 'selected' if settings.get('default_theme') == 'blue' else '' }}>Azul</option>
+                                    <option value="green" {{ 'selected' if settings.get('default_theme') == 'green' else '' }}>Verde</option>
+                                    <option value="purple" {{ 'selected' if settings.get('default_theme') == 'purple' else '' }}>Morado</option>
+                                    <option value="orange" {{ 'selected' if settings.get('default_theme') == 'orange' else '' }}>Naranja</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-chart-line"></i> Estadísticas Rápidas</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6 mb-3">
+                                    <h4 class="text-primary">{{ stats.total_products or 0 }}</h4>
+                                    <small class="text-muted">Productos</small>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <h4 class="text-success">{{ stats.total_sales or 0 }}</h4>
+                                    <small class="text-muted">Ventas</small>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <h4 class="text-info">{{ stats.total_customers or 0 }}</h4>
+                                    <small class="text-muted">Clientes</small>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <h4 class="text-warning">{{ stats.low_stock_items or 0 }}</h4>
+                                    <small class="text-muted">Stock Bajo</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary me-2" onclick="window.history.back()">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Configuración
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Logo preview
+document.getElementById('company_logo').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('logoPreview').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+// Theme preview
+document.getElementById('default_theme').addEventListener('change', function(e) {
+    document.body.className = document.body.className.replace(/theme-\w+/, '') + ' theme-' + e.target.value;
+});
+</script>
+{% endblock %}

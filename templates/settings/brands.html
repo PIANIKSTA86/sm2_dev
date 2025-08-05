@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Marcas - SM2 Cloud{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-trademark"></i> Gestión de Marcas</h2>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#brandModal">
+                <i class="fas fa-plus"></i> Nueva Marca
+            </button>
+        </div>
+
+        <!-- Brands Table -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="brandsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                                <th>Productos</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for brand in brands %}
+                            <tr>
+                                <td>{{ brand.id }}</td>
+                                <td>
+                                    <strong>{{ brand.name }}</strong>
+                                </td>
+                                <td>{{ brand.description or '-' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if brand.is_active else 'secondary' }}">
+                                        {{ 'Activo' if brand.is_active else 'Inactivo' }}
+                                    </span>
+                                </td>
+                                <td>{{ brand.products|length }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-primary" 
+                                                onclick="editBrand({{ brand.id }}, '{{ brand.name }}', '{{ brand.description or '' }}', {{ brand.is_active|tojson }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        {% if brand.products|length == 0 %}
+                                        <button type="button" class="btn btn-outline-danger" 
+                                                onclick="deleteBrand({{ brand.id }}, '{{ brand.name }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Brand Modal -->
+<div class="modal fade" id="brandModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="brandForm" method="POST" action="{{ url_for('settings.brands') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-trademark"></i> <span id="modalTitle">Nueva Marca</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="brand_id" name="brand_id">
+                    
+                    <div class="mb-3">
+                        <label for="brand_name" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="brand_name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="brand_description" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="brand_description" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="brand_is_active" name="is_active" checked>
+                            <label class="form-check-label" for="brand_is_active">
+                                Activo
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning"></i> Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar la marca <strong id="deleteBrandName"></strong>?</p>
+                <p class="text-muted">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#brandsTable').DataTable({
+        order: [[1, 'asc']],
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+        }
+    });
+});
+
+function editBrand(id, name, description, isActive) {
+    $('#brand_id').val(id);
+    $('#brand_name').val(name);
+    $('#brand_description').val(description);
+    $('#brand_is_active').prop('checked', isActive);
+    $('#modalTitle').text('Editar Marca');
+    $('#brandModal').modal('show');
+}
+
+function deleteBrand(id, name) {
+    $('#deleteBrandName').text(name);
+    $('#deleteForm').attr('action', '{{ url_for("settings.brands") }}/' + id + '/delete');
+    $('#deleteModal').modal('show');
+}
+
+// Reset form when modal is closed
+$('#brandModal').on('hidden.bs.modal', function() {
+    $('#brandForm')[0].reset();
+    $('#brand_id').val('');
+    $('#modalTitle').text('Nueva Marca');
+});
+</script>
+{% endblock %}

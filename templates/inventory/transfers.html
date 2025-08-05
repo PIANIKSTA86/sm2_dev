@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Transferencias entre Bodegas - SM2 Cloud{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-exchange-alt"></i> Transferencias entre Bodegas</h2>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transferModal">
+                <i class="fas fa-plus"></i> Nueva Transferencia
+            </button>
+        </div>
+
+        <!-- Transfers Table -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="transfersTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Origen</th>
+                                <th>Destino</th>
+                                <th>Productos</th>
+                                <th>Estado</th>
+                                <th>Usuario</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transfer in transfers %}
+                            <tr>
+                                <td>#{{ transfer.id }}</td>
+                                <td>{{ transfer.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>{{ transfer.source_warehouse.name }}</td>
+                                <td>{{ transfer.destination_warehouse.name }}</td>
+                                <td>{{ transfer.items|length }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'warning' if transfer.status == 'pending' else 'success' if transfer.status == 'completed' else 'danger' }}">
+                                        {{ transfer.status.title() }}
+                                    </span>
+                                </td>
+                                <td>{{ transfer.user.username }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-info" onclick="viewTransfer({{ transfer.id }})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        {% if transfer.status == 'pending' %}
+                                        <button type="button" class="btn btn-outline-success" onclick="completeTransfer({{ transfer.id }})">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" onclick="cancelTransfer({{ transfer.id }})">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="8" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="fas fa-exchange-alt fa-2x mb-3"></i>
+                                        <p>No hay transferencias registradas</p>
+                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#transferModal">
+                                            <i class="fas fa-plus"></i> Crear Primera Transferencia
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transfer Modal -->
+<div class="modal fade" id="transferModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="transferForm" method="POST" action="{{ url_for('inventory.transfers') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exchange-alt"></i> Nueva Transferencia
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="source_warehouse" class="form-label">Bodega Origen *</label>
+                            <select class="form-select" id="source_warehouse" name="source_warehouse_id" required>
+                                <option value="">Seleccionar bodega...</option>
+                                {% for warehouse in warehouses %}
+                                <option value="{{ warehouse.id }}">{{ warehouse.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="destination_warehouse" class="form-label">Bodega Destino *</label>
+                            <select class="form-select" id="destination_warehouse" name="destination_warehouse_id" required>
+                                <option value="">Seleccionar bodega...</option>
+                                {% for warehouse in warehouses %}
+                                <option value="{{ warehouse.id }}">{{ warehouse.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="transfer_notes" class="form-label">Notas</label>
+                        <textarea class="form-control" id="transfer_notes" name="notes" rows="3"></textarea>
+                    </div>
+
+                    <!-- Product Selection -->
+                    <div class="mb-3">
+                        <label class="form-label">Productos a Transferir</label>
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" id="product_search" placeholder="Buscar producto...">
+                            <button type="button" class="btn btn-outline-secondary" onclick="scanBarcode()">
+                                <i class="fas fa-barcode"></i>
+                            </button>
+                        </div>
+                        
+                        <div id="transfer_items" class="border rounded p-3">
+                            <div class="text-muted text-center py-3">
+                                No hay productos agregados
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Crear Transferencia
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    if ($('#transfersTable tbody tr').length > 1) {
+        $('#transfersTable').DataTable({
+            order: [[0, 'desc']],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+            }
+        });
+    }
+
+    // Product search functionality
+    $('#product_search').on('input', function() {
+        const search = $(this).val();
+        const sourceWarehouse = $('#source_warehouse').val();
+        
+        if (search.length >= 2 && sourceWarehouse) {
+            // TODO: Implement product search for transfer
+            console.log('Searching products for transfer:', search, sourceWarehouse);
+        }
+    });
+
+    // Warehouse selection validation
+    $('#source_warehouse, #destination_warehouse').on('change', function() {
+        const source = $('#source_warehouse').val();
+        const destination = $('#destination_warehouse').val();
+        
+        if (source && destination && source === destination) {
+            alert('La bodega origen y destino no pueden ser iguales');
+            $(this).val('');
+        }
+    });
+});
+
+function viewTransfer(id) {
+    // TODO: Implement transfer view
+    window.location.href = '/inventory/transfer/' + id;
+}
+
+function completeTransfer(id) {
+    if (confirm('¿Confirmar que la transferencia ha sido completada?')) {
+        // TODO: Implement transfer completion
+        $.post('/inventory/transfer/' + id + '/complete', function() {
+            location.reload();
+        });
+    }
+}
+
+function cancelTransfer(id) {
+    if (confirm('¿Cancelar esta transferencia?')) {
+        // TODO: Implement transfer cancellation
+        $.post('/inventory/transfer/' + id + '/cancel', function() {
+            location.reload();
+        });
+    }
+}
+
+// Reset form when modal is closed
+$('#transferModal').on('hidden.bs.modal', function() {
+    $('#transferForm')[0].reset();
+    $('#transfer_items').html('<div class="text-muted text-center py-3">No hay productos agregados</div>');
+});
+</script>
+{% endblock %}

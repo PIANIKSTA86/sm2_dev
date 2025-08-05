@@ -244,3 +244,50 @@ def categories():
 def brands():
     brands = Brand.query.filter_by(is_active=True).all()
     return render_template('inventory/brands.html', brands=brands)
+
+@inventory_bp.route('/transfers')
+@login_required
+def transfers():
+    """Warehouse transfer management"""
+    warehouses = Warehouse.query.filter_by(is_active=True).all()
+    transfers = []  # TODO: Implement transfer model
+    return render_template('inventory/transfers.html', 
+                         warehouses=warehouses, 
+                         transfers=transfers)
+
+@inventory_bp.route('/stock_levels')
+@login_required
+def stock_levels():
+    """Stock levels across warehouses"""
+    warehouse_id = request.args.get('warehouse_id', type=int)
+    
+    # Get stock levels query
+    if warehouse_id:
+        query = text("""
+            SELECT p.id, p.sku, p.name, w.name as warehouse_name, 
+                   COALESCE(i.quantity, 0) as quantity, p.min_stock
+            FROM products p
+            CROSS JOIN warehouses w
+            LEFT JOIN inventory i ON p.id = i.product_id AND w.id = i.warehouse_id
+            WHERE p.is_active = true AND w.is_active = true AND w.id = :warehouse_id
+            ORDER BY p.name, w.name
+        """)
+        stock_data = db.session.execute(query, {"warehouse_id": warehouse_id}).fetchall()
+    else:
+        query = text("""
+            SELECT p.id, p.sku, p.name, w.name as warehouse_name, 
+                   COALESCE(i.quantity, 0) as quantity, p.min_stock
+            FROM products p
+            CROSS JOIN warehouses w
+            LEFT JOIN inventory i ON p.id = i.product_id AND w.id = i.warehouse_id
+            WHERE p.is_active = true AND w.is_active = true
+            ORDER BY p.name, w.name
+        """)
+        stock_data = db.session.execute(query).fetchall()
+    
+    warehouses = Warehouse.query.filter_by(is_active=True).all()
+    
+    return render_template('inventory/stock_levels.html',
+                         stock_data=stock_data,
+                         warehouses=warehouses,
+                         selected_warehouse=warehouse_id)

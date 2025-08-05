@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Bodegas - SM2 Cloud{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-warehouse"></i> Gestión de Bodegas</h2>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#warehouseModal">
+                <i class="fas fa-plus"></i> Nueva Bodega
+            </button>
+        </div>
+
+        <!-- Warehouses Grid -->
+        <div class="row">
+            {% for warehouse in warehouses %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ warehouse.name }}</h5>
+                        <span class="badge bg-{{ 'success' if warehouse.is_active else 'secondary' }}">
+                            {{ 'Activo' if warehouse.is_active else 'Inactivo' }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-map-marker-alt"></i> {{ warehouse.address or 'Sin dirección' }}
+                        </p>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-user"></i> {{ warehouse.manager or 'Sin responsable' }}
+                        </p>
+                        <p class="text-muted mb-3">
+                            <i class="fas fa-boxes"></i> {{ warehouse.total_products or 0 }} productos
+                        </p>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-sm btn-outline-primary" 
+                                    onclick="editWarehouse({{ warehouse.id }}, '{{ warehouse.name }}', '{{ warehouse.address or '' }}', '{{ warehouse.manager or '' }}', {{ warehouse.is_active|tojson }})">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-info" 
+                                    onclick="viewInventory({{ warehouse.id }})">
+                                <i class="fas fa-list"></i> Inventario
+                            </button>
+                            {% if warehouse.total_products == 0 %}
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    onclick="deleteWarehouse({{ warehouse.id }}, '{{ warehouse.name }}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-warehouse fa-3x text-muted mb-3"></i>
+                        <h4>No hay bodegas registradas</h4>
+                        <p class="text-muted">Comience creando su primera bodega para gestionar el inventario.</p>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#warehouseModal">
+                            <i class="fas fa-plus"></i> Crear Primera Bodega
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Warehouses Table -->
+        {% if warehouses %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-table"></i> Vista Detallada</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="warehousesTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Dirección</th>
+                                <th>Responsable</th>
+                                <th>Productos</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for warehouse in warehouses %}
+                            <tr>
+                                <td>{{ warehouse.id }}</td>
+                                <td><strong>{{ warehouse.name }}</strong></td>
+                                <td>{{ warehouse.address or '-' }}</td>
+                                <td>{{ warehouse.manager or '-' }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ warehouse.total_products or 0 }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if warehouse.is_active else 'secondary' }}">
+                                        {{ 'Activo' if warehouse.is_active else 'Inactivo' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-primary" 
+                                                onclick="editWarehouse({{ warehouse.id }}, '{{ warehouse.name }}', '{{ warehouse.address or '' }}', '{{ warehouse.manager or '' }}', {{ warehouse.is_active|tojson }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-info" 
+                                                onclick="viewInventory({{ warehouse.id }})">
+                                            <i class="fas fa-list"></i>
+                                        </button>
+                                        {% if warehouse.total_products == 0 %}
+                                        <button type="button" class="btn btn-outline-danger" 
+                                                onclick="deleteWarehouse({{ warehouse.id }}, '{{ warehouse.name }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Warehouse Modal -->
+<div class="modal fade" id="warehouseModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="warehouseForm" method="POST" action="{{ url_for('settings.warehouses') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-warehouse"></i> <span id="modalTitle">Nueva Bodega</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="warehouse_id" name="warehouse_id">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="warehouse_name" class="form-label">Nombre *</label>
+                            <input type="text" class="form-control" id="warehouse_name" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="warehouse_manager" class="form-label">Responsable</label>
+                            <input type="text" class="form-control" id="warehouse_manager" name="manager">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="warehouse_address" class="form-label">Dirección</label>
+                        <textarea class="form-control" id="warehouse_address" name="address" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="warehouse_phone" class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="warehouse_phone" name="phone">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="warehouse_email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="warehouse_email" name="email">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="warehouse_is_active" name="is_active" checked>
+                            <label class="form-check-label" for="warehouse_is_active">
+                                Bodega activa
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-warning"></i> Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar la bodega <strong id="deleteWarehouseName"></strong>?</p>
+                <p class="text-muted">Esta acción no se puede deshacer.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    if ($('#warehousesTable').length) {
+        $('#warehousesTable').DataTable({
+            order: [[1, 'asc']],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+            }
+        });
+    }
+});
+
+function editWarehouse(id, name, address, manager, isActive) {
+    $('#warehouse_id').val(id);
+    $('#warehouse_name').val(name);
+    $('#warehouse_address').val(address);
+    $('#warehouse_manager').val(manager);
+    $('#warehouse_is_active').prop('checked', isActive);
+    $('#modalTitle').text('Editar Bodega');
+    $('#warehouseModal').modal('show');
+}
+
+function deleteWarehouse(id, name) {
+    $('#deleteWarehouseName').text(name);
+    $('#deleteForm').attr('action', '{{ url_for("settings.warehouses") }}/' + id + '/delete');
+    $('#deleteModal').modal('show');
+}
+
+function viewInventory(warehouseId) {
+    window.location.href = '{{ url_for("inventory.index") }}?warehouse=' + warehouseId;
+}
+
+// Reset form when modal is closed
+$('#warehouseModal').on('hidden.bs.modal', function() {
+    $('#warehouseForm')[0].reset();
+    $('#warehouse_id').val('');
+    $('#modalTitle').text('Nueva Bodega');
+});
+</script>
+{% endblock %}

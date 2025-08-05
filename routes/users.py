@@ -140,3 +140,26 @@ def profile():
             flash(f'Error al actualizar perfil: {str(e)}', 'error')
     
     return render_template('users/profile.html', user=user)
+
+@users_bp.route('/change_theme', methods=['POST'])
+@login_required
+def change_theme():
+    """AJAX endpoint to change user theme"""
+    from flask import session, jsonify
+    
+    theme = request.form.get('theme', 'blue')
+    if theme in ['blue', 'green', 'purple', 'orange']:
+        session['theme'] = theme
+        
+        # Update user's preferred theme in database
+        user = get_current_user()
+        if user:
+            user.theme = theme
+            try:
+                db.session.commit()
+            except:
+                db.session.rollback()
+        
+        return jsonify({'success': True, 'theme': theme})
+    
+    return jsonify({'success': False, 'error': 'Invalid theme'})

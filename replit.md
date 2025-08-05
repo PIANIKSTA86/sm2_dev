@@ -1,8 +1,8 @@
 # Overview
 
-This is a comprehensive inventory management system built with Flask that provides a complete solution for managing products, customers, sales, purchases, and warehouses. The system includes a modern web interface with dark theme support, point-of-sale (POS) functionality, reporting capabilities, and user management with role-based access control.
+SM2 Cloud is a comprehensive inventory management system built with Flask that provides a complete solution for managing products, customers, sales, purchases, and warehouses. The system includes a modern web interface with customizable color themes, point-of-sale (POS) functionality, multi-warehouse management, reporting capabilities, and user management with role-based access control.
 
-The application serves businesses that need to track inventory across multiple warehouses, manage customer and supplier relationships, process sales and purchases, and generate various business reports. It includes features like barcode scanning, PDF invoice generation, email notifications, and comprehensive search and filtering capabilities.
+The application serves businesses that need to track inventory across multiple warehouses, manage customer and supplier relationships, process sales and purchases, and generate various business reports. It includes features like barcode scanning, PDF invoice generation, email notifications, warehouse transfers, stock level monitoring, and comprehensive search and filtering capabilities.
 
 # User Preferences
 
@@ -15,7 +15,8 @@ Preferred communication style: Simple, everyday language.
 - **JavaScript Framework**: jQuery with custom modules for POS, barcode scanning, and general functionality
 - **CSS Framework**: Bootstrap 5 with custom theme system supporting multiple color schemes (blue, green, purple, orange)
 - **UI Components**: DataTables for advanced table functionality, Font Awesome for icons
-- **Real-time Features**: AJAX-based search, live cart updates in POS system
+- **Real-time Features**: AJAX-based search, live cart updates in POS system, dynamic theme switching
+- **Theme System**: Live theme switching with navbar controls and user profile customization
 
 ## Backend Architecture
 - **Web Framework**: Flask with Blueprint-based modular architecture
@@ -47,10 +48,14 @@ Preferred communication style: Simple, everyday language.
 ## Business Logic Features
 - **Point of Sale**: Real-time product search, cart management, and invoice generation
 - **Inventory Tracking**: Multi-warehouse stock levels with minimum stock alerts
+- **Warehouse Management**: Complete warehouse administration, transfers between locations, stock level monitoring
+- **Product Classification**: Categories, brands, and product grouping system
 - **Barcode Support**: Scanner integration for product lookup and data entry
 - **Document Generation**: PDF invoice creation with company branding
 - **Reporting System**: Sales, purchase, and inventory reports with filtering
 - **Serial Number Tracking**: Individual item tracking for warranty and service
+- **Theme Customization**: User-selectable color schemes with live preview and persistence
+- **Company Settings**: Comprehensive system configuration including branding and business rules
 
 # External Dependencies
 

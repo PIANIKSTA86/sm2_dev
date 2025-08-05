@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Perfil - SM2 Cloud{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-user-cog"></i> Mi Perfil</h2>
+        </div>
+
+        <form method="POST" action="{{ url_for('users.profile') }}">
+            <div class="row">
+                <!-- Profile Information -->
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-info-circle"></i> Información Personal</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="username" class="form-label">Usuario</label>
+                                    <input type="text" class="form-control" id="username" value="{{ user.username }}" disabled>
+                                    <div class="form-text">El nombre de usuario no se puede cambiar</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="{{ user.email }}" required>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="role" class="form-label">Rol</label>
+                                    <input type="text" class="form-control" id="role" 
+                                           value="{{ user.role.title() }}" disabled>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="warehouse" class="form-label">Bodega Asignada</label>
+                                    <input type="text" class="form-control" id="warehouse" 
+                                           value="{{ user.warehouse.name if user.warehouse else 'Todas las bodegas' }}" disabled>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Settings -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-lock"></i> Cambiar Contraseña</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="password" class="form-label">Nueva Contraseña</label>
+                                    <input type="password" class="form-control" id="password" name="password">
+                                    <div class="form-text">Dejar en blanco para mantener la contraseña actual</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="confirm_password" class="form-label">Confirmar Contraseña</label>
+                                    <input type="password" class="form-control" id="confirm_password">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appearance and Preferences -->
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-palette"></i> Personalización</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-4">
+                                <label for="theme" class="form-label">Tema de Colores</label>
+                                <select class="form-select" id="theme" name="theme" onchange="previewTheme(this.value)">
+                                    <option value="blue" {{ 'selected' if user.theme == 'blue' else '' }}>Azul</option>
+                                    <option value="green" {{ 'selected' if user.theme == 'green' else '' }}>Verde</option>
+                                    <option value="purple" {{ 'selected' if user.theme == 'purple' else '' }}>Morado</option>
+                                    <option value="orange" {{ 'selected' if user.theme == 'orange' else '' }}>Naranja</option>
+                                </select>
+                            </div>
+
+                            <!-- Theme Preview -->
+                            <div class="mb-4">
+                                <label class="form-label">Vista Previa</label>
+                                <div class="theme-preview border rounded p-3">
+                                    <div class="d-flex gap-2 mb-2">
+                                        <button type="button" class="btn btn-primary btn-sm">Primario</button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm">Secundario</button>
+                                    </div>
+                                    <div class="progress mb-2" style="height: 8px;">
+                                        <div class="progress-bar" role="progressbar" style="width: 75%"></div>
+                                    </div>
+                                    <div class="d-flex gap-1">
+                                        <span class="badge bg-primary">Etiqueta</span>
+                                        <span class="badge bg-outline-primary">Info</span>
+                                    </div>
+                                </div>
+                                <div class="form-text">Los cambios se aplicarán al guardar</div>
+                            </div>
+
+                            <!-- Quick Theme Selector -->
+                            <div class="mb-4">
+                                <label class="form-label">Selección Rápida</label>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm theme-btn" 
+                                            style="background-color: #0d6efd; width: 40px; height: 30px;" 
+                                            onclick="selectTheme('blue')" title="Azul"></button>
+                                    <button type="button" class="btn btn-sm theme-btn" 
+                                            style="background-color: #198754; width: 40px; height: 30px;" 
+                                            onclick="selectTheme('green')" title="Verde"></button>
+                                    <button type="button" class="btn btn-sm theme-btn" 
+                                            style="background-color: #6f42c1; width: 40px; height: 30px;" 
+                                            onclick="selectTheme('purple')" title="Morado"></button>
+                                    <button type="button" class="btn btn-sm theme-btn" 
+                                            style="background-color: #fd7e14; width: 40px; height: 30px;" 
+                                            onclick="selectTheme('orange')" title="Naranja"></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Stats -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-chart-line"></i> Mi Actividad</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6 mb-3">
+                                    <h4 class="text-primary">0</h4>
+                                    <small class="text-muted">Ventas Hoy</small>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <h4 class="text-success">0</h4>
+                                    <small class="text-muted">Este Mes</small>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <h4 class="text-info">{{ user.created_at.strftime('%d/%m/%Y') if user.created_at else 'N/A' }}</h4>
+                                    <small class="text-muted">Registro</small>
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <h4 class="text-warning">{{ user.last_login.strftime('%d/%m/%Y') if user.last_login else 'Nunca' }}</h4>
+                                    <small class="text-muted">Último Acceso</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary me-2" onclick="window.history.back()">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Password confirmation validation
+document.getElementById('confirm_password').addEventListener('input', function() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = this.value;
+    
+    if (password && confirmPassword && password !== confirmPassword) {
+        this.classList.add('is-invalid');
+        if (!this.nextElementSibling || !this.nextElementSibling.classList.contains('invalid-feedback')) {
+            const feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback';
+            feedback.textContent = 'Las contraseñas no coinciden';
+            this.parentNode.appendChild(feedback);
+        }
+    } else {
+        this.classList.remove('is-invalid');
+        const feedback = this.parentNode.querySelector('.invalid-feedback');
+        if (feedback) feedback.remove();
+    }
+});
+
+// Theme preview
+function previewTheme(theme) {
+    // Update body class for immediate preview
+    document.body.className = document.body.className.replace(/theme-\w+/g, '') + ' theme-' + theme;
+    
+    // Update progress bar color
+    const progressBar = document.querySelector('.theme-preview .progress-bar');
+    const colors = {
+        'blue': '#0d6efd',
+        'green': '#198754', 
+        'purple': '#6f42c1',
+        'orange': '#fd7e14'
+    };
+    progressBar.style.backgroundColor = colors[theme];
+}
+
+// Quick theme selection
+function selectTheme(theme) {
+    document.getElementById('theme').value = theme;
+    previewTheme(theme);
+    
+    // Update quick selector visual feedback
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.classList.remove('border', 'border-dark', 'border-3');
+    });
+    event.target.classList.add('border', 'border-dark', 'border-3');
+}
+
+// Initialize theme preview on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const currentTheme = document.getElementById('theme').value;
+    previewTheme(currentTheme);
+    
+    // Highlight current theme button
+    const colors = {
+        'blue': '#0d6efd',
+        'green': '#198754', 
+        'purple': '#6f42c1',
+        'orange': '#fd7e14'
+    };
+    
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        if (btn.style.backgroundColor === colors[currentTheme]) {
+            btn.classList.add('border', 'border-dark', 'border-3');
+        }
+    });
+});
+
+// Form validation before submit
+document.querySelector('form').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    
+    if (password && password !== confirmPassword) {
+        e.preventDefault();
+        alert('Las contraseñas no coinciden');
+        document.getElementById('confirm_password').focus();
+    }
+});
+</script>
+{% endblock %}

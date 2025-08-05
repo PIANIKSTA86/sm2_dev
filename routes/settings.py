@@ -11,9 +11,42 @@ settings_bp = Blueprint('settings', __name__)
 def index():
     return render_template('settings/index.html')
 
-@settings_bp.route('/warehouses')
+@settings_bp.route('/warehouses', methods=['GET', 'POST'])
 @admin_required
 def warehouses():
+    if request.method == 'POST':
+        try:
+            warehouse_id = request.form.get('warehouse_id')
+            if warehouse_id:
+                # Edit existing warehouse
+                warehouse = Warehouse.query.get_or_404(warehouse_id)
+                warehouse.name = request.form['name']
+                warehouse.address = request.form.get('address')
+                warehouse.manager = request.form.get('manager')
+                warehouse.phone = request.form.get('phone')
+                warehouse.email = request.form.get('email')
+                warehouse.is_active = bool(request.form.get('is_active'))
+                flash('Bodega actualizada exitosamente', 'success')
+            else:
+                # Create new warehouse
+                warehouse = Warehouse(
+                    name=request.form['name'],
+                    address=request.form.get('address'),
+                    manager=request.form.get('manager'),
+                    phone=request.form.get('phone'),
+                    email=request.form.get('email'),
+                    is_active=bool(request.form.get('is_active', True))
+                )
+                db.session.add(warehouse)
+                flash('Bodega creada exitosamente', 'success')
+            
+            db.session.commit()
+            return redirect(url_for('settings.warehouses'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al procesar bodega: {str(e)}', 'error')
+    
     warehouses = Warehouse.query.all()
     return render_template('settings/warehouses.html', warehouses=warehouses)
 
@@ -70,6 +103,39 @@ def categories():
     categories = Category.query.all()
     return render_template('settings/categories.html', categories=categories)
 
+@settings_bp.route('/brands', methods=['GET', 'POST'])
+@admin_required
+def brands():
+    if request.method == 'POST':
+        try:
+            brand_id = request.form.get('brand_id')
+            if brand_id:
+                # Edit existing brand
+                brand = Brand.query.get_or_404(brand_id)
+                brand.name = request.form['name']
+                brand.description = request.form.get('description')
+                brand.is_active = bool(request.form.get('is_active'))
+                flash('Marca actualizada exitosamente', 'success')
+            else:
+                # Create new brand
+                brand = Brand(
+                    name=request.form['name'],
+                    description=request.form.get('description'),
+                    is_active=bool(request.form.get('is_active', True))
+                )
+                db.session.add(brand)
+                flash('Marca creada exitosamente', 'success')
+            
+            db.session.commit()
+            return redirect(url_for('settings.brands'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al procesar marca: {str(e)}', 'error')
+    
+    brands = Brand.query.all()
+    return render_template('settings/brands.html', brands=brands)
+
 @settings_bp.route('/category/new', methods=['POST'])
 @admin_required
 def new_category():
@@ -89,30 +155,7 @@ def new_category():
     
     return redirect(url_for('settings.categories'))
 
-@settings_bp.route('/brands')
-@admin_required
-def brands():
-    brands = Brand.query.all()
-    return render_template('settings/brands.html', brands=brands)
 
-@settings_bp.route('/brand/new', methods=['POST'])
-@admin_required
-def new_brand():
-    try:
-        brand = Brand(
-            name=request.form['name'],
-            description=request.form.get('description')
-        )
-        
-        db.session.add(brand)
-        db.session.commit()
-        
-        flash('Marca creada exitosamente', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error al crear marca: {str(e)}', 'error')
-    
-    return redirect(url_for('settings.brands'))
 
 @settings_bp.route('/backup')
 @admin_required
@@ -192,8 +235,17 @@ def company():
     
     # Get current settings
     company_settings = {}
-    settings = Setting.query.filter_by(category='company').all()
+    settings = Setting.query.all()
     for setting in settings:
         company_settings[setting.key] = setting.value
     
-    return render_template('settings/company.html', settings=company_settings)
+    # Get statistics for the sidebar
+    from sqlalchemy import text
+    stats = {
+        'total_products': db.session.execute(text("SELECT COUNT(*) FROM products WHERE is_active = true")).scalar() or 0,
+        'total_sales': db.session.execute(text("SELECT COUNT(*) FROM sales")).scalar() or 0,
+        'total_customers': db.session.execute(text("SELECT COUNT(*) FROM customers WHERE customer_type = 'customer'")).scalar() or 0,
+        'low_stock_items': db.session.execute(text("SELECT COUNT(*) FROM products p LEFT JOIN inventory i ON p.id = i.product_id WHERE p.is_active = true AND COALESCE(i.quantity, 0) <= p.min_stock")).scalar() or 0
+    }
+    
+    return render_template('settings/company.html', settings=company_settings, stats=stats)
