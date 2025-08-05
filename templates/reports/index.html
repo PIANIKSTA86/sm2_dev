@@ -1,0 +1,519 @@
+{% extends "base.html" %}
+
+{% block title %}Reportes - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-chart-bar"></i> Centro de Reportes
+            </h1>
+            <p class="text-muted">Análisis y reportes del sistema</p>
+        </div>
+    </div>
+    
+    <!-- Quick Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Ventas Hoy</h6>
+                            <h4 class="mb-0" id="today-sales">$0.00</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-cash-register fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card bg-gradient-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Ventas Mes</h6>
+                            <h4 class="mb-0" id="month-sales">$0.00</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card bg-gradient-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Productos</h6>
+                            <h4 class="mb-0" id="total-products">0</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-boxes fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card bg-gradient-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Clientes</h6>
+                            <h4 class="mb-0" id="total-customers">0</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-users fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reports Grid -->
+    <div class="row">
+        <!-- Sales Reports -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-area"></i> Reportes de Ventas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('reports.sales_report') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Reporte de Ventas</h6>
+                                    <p class="mb-1">Análisis detallado de ventas por período</p>
+                                    <small class="text-muted">Filtros: fecha, cliente, vendedor</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        
+                        <a href="{{ url_for('reports.sales_report') }}?type=detailed" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Ventas Detalladas</h6>
+                                    <p class="mb-1">Listado completo de transacciones</p>
+                                    <small class="text-muted">Incluye productos vendidos</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        
+                        <a href="{{ url_for('reports.profit_report') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Análisis de Rentabilidad</h6>
+                                    <p class="mb-1">Márgenes de ganancia por producto</p>
+                                    <small class="text-muted">Costo vs precio de venta</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Inventory Reports -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-warehouse"></i> Reportes de Inventario
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('reports.inventory_report') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Estado de Inventario</h6>
+                                    <p class="mb-1">Stock actual por bodega y categoría</p>
+                                    <small class="text-muted">Incluye valorización</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        
+                        <a href="{{ url_for('reports.inventory_report') }}?show_zero=false" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Productos con Stock</h6>
+                                    <p class="mb-1">Solo productos con existencias</p>
+                                    <small class="text-muted">Excluye productos agotados</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        
+                        <a href="{{ url_for('inventory.index') }}?low_stock=1" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Stock Bajo</h6>
+                                    <p class="mb-1">Productos que requieren reposición</p>
+                                    <small class="text-muted">Basado en stock mínimo</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Customer Reports -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users"></i> Reportes de Clientes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('reports.customer_report') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Análisis de Clientes</h6>
+                                    <p class="mb-1">Estadísticas de compras por cliente</p>
+                                    <small class="text-muted">Frecuencia y valor total</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        
+                        <a href="{{ url_for('reports.customer_report') }}?type=supplier" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Análisis de Proveedores</h6>
+                                    <p class="mb-1">Estadísticas de compras a proveedores</p>
+                                    <small class="text-muted">Volumen y frecuencia</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        
+                        <a href="{{ url_for('customers.index') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Directorio de Terceros</h6>
+                                    <p class="mb-1">Listado completo de contactos</p>
+                                    <small class="text-muted">Clientes, proveedores y empleados</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Reports -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cogs"></i> Reportes del Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('users.index') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Usuarios del Sistema</h6>
+                                    <p class="mb-1">Listado de usuarios y permisos</p>
+                                    <small class="text-muted">Solo para administradores</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        
+                        <a href="{{ url_for('settings.backup') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Respaldo de Datos</h6>
+                                    <p class="mb-1">Crear y restaurar copias de seguridad</p>
+                                    <small class="text-muted">Protege la información</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        
+                        <a href="#" onclick="generateCustomReport()" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Reporte Personalizado</h6>
+                                    <p class="mb-1">Crear reporte con filtros específicos</p>
+                                    <small class="text-muted">Configuración avanzada</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt"></i> Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <button type="button" class="btn btn-outline-primary w-100" onclick="printDailySales()">
+                                <i class="fas fa-print"></i> Ventas del Día
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button type="button" class="btn btn-outline-success w-100" onclick="exportInventory()">
+                                <i class="fas fa-file-excel"></i> Exportar Inventario
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button type="button" class="btn btn-outline-info w-100" onclick="generateMonthlyReport()">
+                                <i class="fas fa-calendar"></i> Reporte Mensual
+                            </button>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button type="button" class="btn btn-outline-warning w-100" onclick="checkLowStock()">
+                                <i class="fas fa-exclamation-triangle"></i> Verificar Stock
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Report Modal -->
+<div class="modal fade" id="customReportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reporte Personalizado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="customReportForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="report_type" class="form-label">Tipo de Reporte</label>
+                            <select class="form-select" id="report_type" required>
+                                <option value="">Seleccionar tipo</option>
+                                <option value="sales">Ventas</option>
+                                <option value="inventory">Inventario</option>
+                                <option value="customers">Clientes</option>
+                                <option value="profit">Rentabilidad</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="date_range" class="form-label">Período</label>
+                            <select class="form-select" id="date_range">
+                                <option value="today">Hoy</option>
+                                <option value="week">Esta Semana</option>
+                                <option value="month">Este Mes</option>
+                                <option value="quarter">Este Trimestre</option>
+                                <option value="year">Este Año</option>
+                                <option value="custom">Personalizado</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3" id="custom_dates" style="display: none;">
+                            <label for="start_date" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="start_date">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3" id="custom_dates_end" style="display: none;">
+                            <label for="end_date" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control" id="end_date">
+                        </div>
+                        
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Formato de Salida</label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="output_format" value="html" checked>
+                                <label class="form-check-label">Ver en Pantalla</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="output_format" value="pdf">
+                                <label class="form-check-label">PDF</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="output_format" value="excel">
+                                <label class="form-check-label">Excel</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="runCustomReport()">
+                    <i class="fas fa-play"></i> Generar Reporte
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Load quick stats
+    loadQuickStats();
+    
+    // Handle date range selection
+    $('#date_range').change(function() {
+        if ($(this).val() === 'custom') {
+            $('#custom_dates, #custom_dates_end').show();
+        } else {
+            $('#custom_dates, #custom_dates_end').hide();
+        }
+    });
+});
+
+function loadQuickStats() {
+    // This would normally load from an API endpoint
+    // For now, showing placeholder functionality
+    $('#today-sales').text('$12,450.00');
+    $('#month-sales').text('$385,720.00');
+    $('#total-products').text('1,247');
+    $('#total-customers').text('89');
+}
+
+function generateCustomReport() {
+    const modal = new bootstrap.Modal(document.getElementById('customReportModal'));
+    modal.show();
+}
+
+function runCustomReport() {
+    const form = document.getElementById('customReportForm');
+    const reportType = document.getElementById('report_type').value;
+    const dateRange = document.getElementById('date_range').value;
+    const outputFormat = document.querySelector('input[name="output_format"]:checked').value;
+    
+    if (!reportType) {
+        alert('Seleccione un tipo de reporte');
+        return;
+    }
+    
+    // Build URL based on report type
+    let url = '';
+    const params = new URLSearchParams();
+    
+    switch (reportType) {
+        case 'sales':
+            url = '/reports/sales_report';
+            break;
+        case 'inventory':
+            url = '/reports/inventory_report';
+            break;
+        case 'customers':
+            url = '/reports/customer_report';
+            break;
+        case 'profit':
+            url = '/reports/profit_report';
+            break;
+    }
+    
+    // Add date parameters
+    if (dateRange === 'custom') {
+        const startDate = document.getElementById('start_date').value;
+        const endDate = document.getElementById('end_date').value;
+        if (startDate) params.append('start_date', startDate);
+        if (endDate) params.append('end_date', endDate);
+    } else {
+        // Calculate dates based on range
+        const today = new Date();
+        let startDate = new Date(today);
+        
+        switch (dateRange) {
+            case 'week':
+                startDate.setDate(today.getDate() - 7);
+                break;
+            case 'month':
+                startDate.setMonth(today.getMonth() - 1);
+                break;
+            case 'quarter':
+                startDate.setMonth(today.getMonth() - 3);
+                break;
+            case 'year':
+                startDate.setFullYear(today.getFullYear() - 1);
+                break;
+        }
+        
+        if (dateRange !== 'today') {
+            params.append('start_date', startDate.toISOString().split('T')[0]);
+            params.append('end_date', today.toISOString().split('T')[0]);
+        }
+    }
+    
+    // Add output format for export
+    if (outputFormat !== 'html') {
+        params.append('format', outputFormat);
+    }
+    
+    // Navigate to report
+    const finalUrl = url + (params.toString() ? '?' + params.toString() : '');
+    
+    if (outputFormat === 'html') {
+        window.location.href = finalUrl;
+    } else {
+        window.open(finalUrl, '_blank');
+    }
+    
+    // Close modal
+    bootstrap.Modal.getInstance(document.getElementById('customReportModal')).hide();
+}
+
+// Quick action functions
+function printDailySales() {
+    const today = new Date().toISOString().split('T')[0];
+    window.open(`/reports/sales_report?start_date=${today}&end_date=${today}&format=pdf`, '_blank');
+}
+
+function exportInventory() {
+    window.open('/reports/export/inventory', '_blank');
+}
+
+function generateMonthlyReport() {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    
+    const startDate = firstDay.toISOString().split('T')[0];
+    const endDate = lastDay.toISOString().split('T')[0];
+    
+    window.open(`/reports/sales_report?start_date=${startDate}&end_date=${endDate}&format=pdf`, '_blank');
+}
+
+function checkLowStock() {
+    window.location.href = '/inventory?low_stock=1';
+}
+</script>
+{% endblock %}

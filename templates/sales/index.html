@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+
+{% block title %}Ventas - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-receipt"></i> Gestión de Ventas
+            </h1>
+            <p class="text-muted">Historial y gestión de ventas</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a href="{{ url_for('pos.index') }}" class="btn btn-success me-2">
+                <i class="fas fa-cash-register"></i> POS
+            </a>
+            <a href="{{ url_for('sales.new_sale') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nueva Venta
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search }}" placeholder="Número de factura">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="start_date" class="form-label">Fecha Desde</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" 
+                                   value="{{ start_date }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="end_date" class="form-label">Fecha Hasta</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" 
+                                   value="{{ end_date }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="customer_id" class="form-label">Cliente</label>
+                            <select class="form-select" id="customer_id" name="customer_id">
+                                <option value="">Todos los clientes</option>
+                                {% for customer in customers %}
+                                <option value="{{ customer.id }}" {% if customer.id == customer_id %}selected{% endif %}>
+                                    {{ customer.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                            <a href="{{ url_for('sales.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sales Table -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Ventas Registradas</h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-success" onclick="exportSales()">
+                            <i class="fas fa-file-excel"></i> Exportar
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                    type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-print"></i> Imprimir
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="printSalesList()">
+                                    <i class="fas fa-list"></i> Lista de Ventas
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="printSalesSummary()">
+                                    <i class="fas fa-chart-bar"></i> Resumen
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="salesTable">
+                            <thead>
+                                <tr>
+                                    <th>Factura</th>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Vendedor</th>
+                                    <th>Subtotal</th>
+                                    <th>Impuesto</th>
+                                    <th>Total</th>
+                                    <th>Método Pago</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sale in sales %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('sales.view_sale', id=sale.id) }}" class="text-decoration-none">
+                                            <strong>{{ sale.invoice_number }}</strong>
+                                        </a>
+                                    </td>
+                                    <td>{{ sale.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ sale.customer.name if sale.customer else 'Cliente General' }}</td>
+                                    <td>{{ sale.user.username }}</td>
+                                    <td>${{ "{:,.2f}".format(sale.subtotal) }}</td>
+                                    <td>${{ "{:,.2f}".format(sale.tax_amount) }}</td>
+                                    <td><strong>${{ "{:,.2f}".format(sale.total) }}</strong></td>
+                                    <td>
+                                        <span class="badge bg-{% if sale.payment_method == 'cash' %}success{% elif sale.payment_method == 'card' %}primary{% elif sale.payment_method == 'credit' %}warning{% else %}info{% endif %}">
+                                            {{ sale.payment_method.title() if sale.payment_method else 'N/A' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if sale.payment_status == 'paid' %}success{% elif sale.payment_status == 'pending' %}warning{% else %}danger{% endif %}">
+                                            {{ sale.payment_status.title() if sale.payment_status else 'Pagado' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('sales.view_sale', id=sale.id) }}" 
+                                               class="btn btn-outline-primary" title="Ver">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('sales.generate_pdf', id=sale.id) }}" 
+                                               class="btn btn-outline-danger" title="PDF">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-info" 
+                                                    onclick="emailInvoice({{ sale.id }})" title="Email">
+                                                <i class="fas fa-envelope"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Summary -->
+                    {% if sales %}
+                    <div class="row mt-4">
+                        <div class="col-md-8">
+                            <!-- Pagination -->
+                            {% if pagination.total_pages > 1 %}
+                            <nav aria-label="Paginación">
+                                <ul class="pagination">
+                                    {% if pagination.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ pagination.prev_num }}&search={{ search }}&start_date={{ start_date }}&end_date={{ end_date }}&customer_id={{ customer_id }}">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                    
+                                    {% for page_num in pagination.pages %}
+                                    <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                        <a class="page-link" href="?page={{ page_num }}&search={{ search }}&start_date={{ start_date }}&end_date={{ end_date }}&customer_id={{ customer_id }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                    
+                                    {% if pagination.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ pagination.next_num }}&search={{ search }}&start_date={{ start_date }}&end_date={{ end_date }}&customer_id={{ customer_id }}">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Resumen de la Página</h6>
+                                    {% set page_total = sales|sum(attribute='total') %}
+                                    <p class="mb-1"><strong>Total de ventas:</strong> {{ sales|length }}</p>
+                                    <p class="mb-0"><strong>Valor total:</strong> ${{ "{:,.2f}".format(page_total) }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No se encontraron ventas</h5>
+                        <p class="text-muted">No hay ventas que coincidan con los criterios de búsqueda.</p>
+                        <a href="{{ url_for('sales.new_sale') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Crear Primera Venta
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Email Invoice Modal -->
+<div class="modal fade" id="emailModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Enviar Factura por Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="emailForm" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email del Cliente</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Enviar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize DataTable
+$(document).ready(function() {
+    $('#salesTable').DataTable({
+        "paging": false,
+        "info": false,
+        "searching": false,
+        "ordering": true,
+        "order": [[1, "desc"]], // Order by date descending
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        }
+    });
+});
+
+// Email invoice functionality
+function emailInvoice(saleId) {
+    const modal = new bootstrap.Modal(document.getElementById('emailModal'));
+    const form = document.getElementById('emailForm');
+    form.action = `/sales/${saleId}/email`;
+    modal.show();
+}
+
+// Export functionality
+function exportSales() {
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = `/reports/export/sales?${params.toString()}`;
+}
+
+// Print functionality
+function printSalesList() {
+    window.print();
+}
+
+function printSalesSummary() {
+    // Generate summary print view
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Resumen de Ventas</title>
+            <style>
+                body { font-family: Arial, sans-serif; }
+                .header { text-align: center; margin-bottom: 30px; }
+                .summary { margin: 20px 0; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h2>Resumen de Ventas</h2>
+                <p>Período: ${document.getElementById('start_date').value || 'Desde el inicio'} - ${document.getElementById('end_date').value || 'Hasta hoy'}</p>
+            </div>
+            <div class="summary">
+                <p><strong>Total de ventas mostradas:</strong> {{ sales|length }}</p>
+                <p><strong>Valor total:</strong> ${{ "{:,.2f}".format(sales|sum(attribute='total')) }}</p>
+            </div>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+</script>
+{% endblock %}

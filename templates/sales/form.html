@@ -1,0 +1,588 @@
+{% extends "base.html" %}
+
+{% block title %}Nueva Venta - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-shopping-cart"></i> Nueva Venta
+            </h1>
+            <p class="text-muted">Crear una nueva factura de venta</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a href="{{ url_for('sales.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    <form method="POST" id="saleForm">
+        <div class="row">
+            <!-- Main Sale Form -->
+            <div class="col-lg-8">
+                <!-- Customer & Warehouse Selection -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Información de la Venta</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="customer_id" class="form-label">Cliente</label>
+                                <div class="input-group">
+                                    <select class="form-select" id="customer_id" name="customer_id">
+                                        <option value="">Cliente General</option>
+                                        {% for customer in customers %}
+                                        <option value="{{ customer.id }}" data-price-level="{{ customer.price_level }}">
+                                            {{ customer.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="showCustomerModal()">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="warehouse_id" class="form-label">Bodega <span class="text-danger">*</span></label>
+                                <select class="form-select" id="warehouse_id" name="warehouse_id" required>
+                                    {% for warehouse in warehouses %}
+                                    <option value="{{ warehouse.id }}">{{ warehouse.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="payment_method" class="form-label">Método de Pago</label>
+                                <select class="form-select" id="payment_method" name="payment_method">
+                                    <option value="cash">Efectivo</option>
+                                    <option value="card">Tarjeta</option>
+                                    <option value="credit">Crédito</option>
+                                    <option value="transfer">Transferencia</option>
+                                    <option value="mixed">Mixto</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="notes" class="form-label">Notas</label>
+                                <input type="text" class="form-control" id="notes" name="notes" 
+                                       placeholder="Notas adicionales">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Product Search -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Agregar Productos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="product_search" class="form-label">Buscar Producto</label>
+                                <input type="text" class="form-control" id="product_search" 
+                                       placeholder="Nombre, SKU o código de barras">
+                                <div id="search_results" class="list-group mt-2" style="max-height: 200px; overflow-y: auto;"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanBarcode()">
+                                    <i class="fas fa-barcode"></i> Escanear Código
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Products Table -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Productos en la Venta</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table" id="products_table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 35%;">Producto</th>
+                                        <th style="width: 10%;">Cant.</th>
+                                        <th style="width: 15%;">Precio</th>
+                                        <th style="width: 10%;">Desc. %</th>
+                                        <th style="width: 15%;">Total</th>
+                                        <th style="width: 10%;">Serial</th>
+                                        <th style="width: 5%;">Acc.</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="products_tbody">
+                                    <!-- Products will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div id="empty_products" class="text-center py-4">
+                            <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No hay productos agregados</h5>
+                            <p class="text-muted">Busque y agregue productos a esta venta</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sale Summary Sidebar -->
+            <div class="col-lg-4">
+                <!-- Customer Info -->
+                <div class="card mb-4" id="customer_info" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Información del Cliente</h5>
+                    </div>
+                    <div class="card-body" id="customer_details">
+                        <!-- Customer details will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- Sale Summary -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Resumen de la Venta</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span id="subtotal_display">$0.00</span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="discount_percent" class="form-label">Descuento General %</label>
+                            <input type="number" class="form-control" id="discount_percent" 
+                                   value="0" min="0" max="100" step="0.01">
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Descuento:</span>
+                            <span id="discount_display">$0.00</span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="tax_rate" class="form-label">Impuesto %</label>
+                            <input type="number" class="form-control" id="tax_rate" 
+                                   value="0" min="0" max="100" step="0.01">
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Impuesto:</span>
+                            <span id="tax_display">$0.00</span>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between mb-3">
+                            <strong>Total:</strong>
+                            <strong id="total_display">$0.00</strong>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="send_email" name="send_email">
+                            <label class="form-check-label" for="send_email">
+                                Enviar factura por email
+                            </label>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg" id="save_sale">
+                                <i class="fas fa-save"></i> Guardar Venta
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="processQuickSale()">
+                                <i class="fas fa-bolt"></i> Venta Rápida
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Payment Calculator -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Calculadora de Pago</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="payment_received" class="form-label">Monto Recibido</label>
+                            <input type="number" class="form-control" id="payment_received" 
+                                   step="0.01" placeholder="0.00">
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total a Pagar:</span>
+                            <span id="total_to_pay">$0.00</span>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <span>Cambio:</span>
+                            <span id="change_display" class="fw-bold">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hidden fields for form submission -->
+        <input type="hidden" id="products_data" name="products_data" value="[]">
+    </form>
+</div>
+
+<!-- Quick Customer Modal -->
+<div class="modal fade" id="customerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cliente Rápido</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="quickCustomerForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="customer_name" class="form-label">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="customer_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customer_document" class="form-label">Documento</label>
+                        <input type="text" class="form-control" id="customer_document">
+                    </div>
+                    <div class="mb-3">
+                        <label for="customer_phone" class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" id="customer_phone">
+                    </div>
+                    <div class="mb-3">
+                        <label for="customer_email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="customer_email">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Crear Cliente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let saleProducts = [];
+let productCounter = 0;
+
+// Initialize the form
+$(document).ready(function() {
+    // Customer selection change
+    $('#customer_id').change(function() {
+        loadCustomerInfo($(this).val());
+        updatePriceLevel();
+    });
+    
+    // Product search
+    $('#product_search').on('input', function() {
+        const search = $(this).val();
+        if (search.length >= 2) {
+            searchProducts(search);
+        } else {
+            $('#search_results').empty();
+        }
+    });
+    
+    // Calculation changes
+    $('#discount_percent, #tax_rate').on('input', calculateTotals);
+    $('#payment_received').on('input', calculateChange);
+    
+    updateDisplay();
+});
+
+// Product search function
+function searchProducts(search) {
+    const warehouseId = $('#warehouse_id').val();
+    
+    $.get('/inventory/search_products', {
+        q: search,
+        warehouse_id: warehouseId
+    }, function(products) {
+        const resultsContainer = $('#search_results');
+        resultsContainer.empty();
+        
+        products.forEach(function(product) {
+            const item = $(`
+                <a href="#" class="list-group-item list-group-item-action" onclick="addProduct(${product.id}, '${product.name}', '${product.sku}', ${product.price1}, ${product.quantity}, ${product.track_serial})">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="mb-1">${product.name}</h6>
+                            <small class="text-muted">SKU: ${product.sku} | Stock: ${product.quantity}</small>
+                        </div>
+                        <div class="text-end">
+                            <strong>$${product.price1.toFixed(2)}</strong>
+                        </div>
+                    </div>
+                </a>
+            `);
+            resultsContainer.append(item);
+        });
+    });
+}
+
+// Add product to sale
+function addProduct(id, name, sku, price, stock, trackSerial) {
+    // Check if product already exists
+    const existingIndex = saleProducts.findIndex(p => p.product_id === id);
+    
+    if (existingIndex >= 0) {
+        // Increase quantity
+        saleProducts[existingIndex].quantity += 1;
+    } else {
+        // Add new product
+        const priceLevel = $('#customer_id').find(':selected').data('price-level') || 1;
+        saleProducts.push({
+            id: ++productCounter,
+            product_id: id,
+            name: name,
+            sku: sku,
+            quantity: 1,
+            unit_price: price,
+            discount_percent: 0,
+            track_serial: trackSerial,
+            stock: stock
+        });
+    }
+    
+    updateProductsTable();
+    calculateTotals();
+    $('#product_search').val('').focus();
+    $('#search_results').empty();
+}
+
+// Update products table
+function updateProductsTable() {
+    const tbody = $('#products_tbody');
+    tbody.empty();
+    
+    if (saleProducts.length === 0) {
+        $('#empty_products').show();
+        $('#products_table').parent().hide();
+        return;
+    }
+    
+    $('#empty_products').hide();
+    $('#products_table').parent().show();
+    
+    saleProducts.forEach(function(product, index) {
+        const total = product.quantity * product.unit_price * (1 - product.discount_percent / 100);
+        
+        const row = $(`
+            <tr>
+                <td>
+                    <strong>${product.name}</strong><br>
+                    <small class="text-muted">SKU: ${product.sku}</small>
+                    ${product.stock <= product.quantity ? '<br><span class="badge bg-warning">Stock bajo</span>' : ''}
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" 
+                           value="${product.quantity}" min="1" max="${product.stock}"
+                           onchange="updateQuantity(${index}, this.value)">
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" 
+                           value="${product.unit_price}" step="0.01" min="0"
+                           onchange="updatePrice(${index}, this.value)">
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" 
+                           value="${product.discount_percent}" min="0" max="100" step="0.01"
+                           onchange="updateDiscount(${index}, this.value)">
+                </td>
+                <td>
+                    <strong>$${total.toFixed(2)}</strong>
+                </td>
+                <td>
+                    ${product.track_serial ? `
+                        <select class="form-select form-select-sm" onchange="updateSerial(${index}, this.value)">
+                            <option value="">Seleccionar</option>
+                        </select>
+                    ` : '-'}
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                            onclick="removeProduct(${index})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `);
+        
+        tbody.append(row);
+    });
+}
+
+// Update product quantity
+function updateQuantity(index, quantity) {
+    saleProducts[index].quantity = parseFloat(quantity);
+    calculateTotals();
+    updateProductsTable();
+}
+
+// Update product price
+function updatePrice(index, price) {
+    saleProducts[index].unit_price = parseFloat(price);
+    calculateTotals();
+    updateProductsTable();
+}
+
+// Update product discount
+function updateDiscount(index, discount) {
+    saleProducts[index].discount_percent = parseFloat(discount);
+    calculateTotals();
+    updateProductsTable();
+}
+
+// Remove product
+function removeProduct(index) {
+    saleProducts.splice(index, 1);
+    updateProductsTable();
+    calculateTotals();
+}
+
+// Calculate totals
+function calculateTotals() {
+    let subtotal = 0;
+    
+    saleProducts.forEach(function(product) {
+        const lineTotal = product.quantity * product.unit_price * (1 - product.discount_percent / 100);
+        subtotal += lineTotal;
+    });
+    
+    const discountPercent = parseFloat($('#discount_percent').val()) || 0;
+    const taxRate = parseFloat($('#tax_rate').val()) || 0;
+    
+    const discountAmount = subtotal * (discountPercent / 100);
+    const taxableAmount = subtotal - discountAmount;
+    const taxAmount = taxableAmount * (taxRate / 100);
+    const total = taxableAmount + taxAmount;
+    
+    $('#subtotal_display').text(`$${subtotal.toFixed(2)}`);
+    $('#discount_display').text(`$${discountAmount.toFixed(2)}`);
+    $('#tax_display').text(`$${taxAmount.toFixed(2)}`);
+    $('#total_display').text(`$${total.toFixed(2)}`);
+    $('#total_to_pay').text(`$${total.toFixed(2)}`);
+    
+    calculateChange();
+}
+
+// Calculate change
+function calculateChange() {
+    const total = parseFloat($('#total_display').text().replace('$', '').replace(',', '')) || 0;
+    const received = parseFloat($('#payment_received').val()) || 0;
+    const change = received - total;
+    
+    $('#change_display').text(`$${change.toFixed(2)}`);
+    $('#change_display').removeClass('text-success text-danger');
+    
+    if (change >= 0) {
+        $('#change_display').addClass('text-success');
+    } else {
+        $('#change_display').addClass('text-danger');
+    }
+}
+
+// Load customer information
+function loadCustomerInfo(customerId) {
+    if (!customerId) {
+        $('#customer_info').hide();
+        return;
+    }
+    
+    $.get(`/sales/get_customer_info/${customerId}`, function(customer) {
+        $('#customer_details').html(`
+            <p class="mb-1"><strong>Nombre:</strong> ${customer.name}</p>
+            <p class="mb-1"><strong>Email:</strong> ${customer.email || 'N/A'}</p>
+            <p class="mb-1"><strong>Teléfono:</strong> ${customer.phone || 'N/A'}</p>
+            <p class="mb-1"><strong>Nivel de Precio:</strong> ${customer.price_level}</p>
+            <p class="mb-0"><strong>Límite de Crédito:</strong> $${customer.credit_limit.toFixed(2)}</p>
+        `);
+        $('#customer_info').show();
+    });
+}
+
+// Update price level based on customer
+function updatePriceLevel() {
+    const priceLevel = $('#customer_id').find(':selected').data('price-level') || 1;
+    
+    // Update prices for all products based on customer price level
+    saleProducts.forEach(function(product) {
+        // This would need to fetch the correct price from the server
+        // For now, we'll keep the current prices
+    });
+    
+    updateProductsTable();
+    calculateTotals();
+}
+
+// Show customer modal
+function showCustomerModal() {
+    const modal = new bootstrap.Modal(document.getElementById('customerModal'));
+    modal.show();
+}
+
+// Quick customer form submit
+$('#quickCustomerForm').submit(function(e) {
+    e.preventDefault();
+    
+    const customerData = {
+        name: $('#customer_name').val(),
+        document: $('#customer_document').val(),
+        phone: $('#customer_phone').val(),
+        email: $('#customer_email').val()
+    };
+    
+    $.post('/pos/quick_customer', JSON.stringify(customerData), function(response) {
+        if (response.success) {
+            // Add customer to select
+            const option = $('<option></option>')
+                .attr('value', response.customer.id)
+                .attr('data-price-level', response.customer.price_level)
+                .text(response.customer.name);
+            
+            $('#customer_id').append(option);
+            $('#customer_id').val(response.customer.id);
+            
+            loadCustomerInfo(response.customer.id);
+            
+            // Close modal and reset form
+            bootstrap.Modal.getInstance(document.getElementById('customerModal')).hide();
+            $('#quickCustomerForm')[0].reset();
+        }
+    }, 'json');
+});
+
+// Submit sale form
+$('#saleForm').submit(function(e) {
+    e.preventDefault();
+    
+    if (saleProducts.length === 0) {
+        alert('Debe agregar al menos un producto a la venta');
+        return;
+    }
+    
+    // Prepare products data
+    $('#products_data').val(JSON.stringify(saleProducts));
+    
+    // Submit form
+    this.submit();
+});
+
+// Update display initially
+function updateDisplay() {
+    updateProductsTable();
+    calculateTotals();
+}
+</script>
+{% endblock %}

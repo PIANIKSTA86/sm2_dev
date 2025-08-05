@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if purchase else 'Nueva' }} Compra - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-truck"></i> {{ 'Editar' if purchase else 'Nueva' }} Compra
+            </h1>
+            <p class="text-muted">{{ 'Modificar información de la compra' if purchase else 'Registrar una nueva compra' }}</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a href="{{ url_for('purchases.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    <form method="POST" id="purchaseForm">
+        <div class="row">
+            <!-- Main Purchase Form -->
+            <div class="col-lg-8">
+                <!-- Supplier & Purchase Info -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Información de la Compra</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="invoice_number" class="form-label">Número de Factura <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="invoice_number" name="invoice_number" 
+                                       value="{{ purchase.invoice_number if purchase else '' }}" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="supplier_id" class="form-label">Proveedor <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <select class="form-select" id="supplier_id" name="supplier_id" required>
+                                        <option value="">Seleccionar proveedor</option>
+                                        {% for supplier in suppliers %}
+                                        <option value="{{ supplier.id }}" 
+                                                {% if purchase and purchase.supplier_id == supplier.id %}selected{% endif %}>
+                                            {{ supplier.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <a href="{{ url_for('customers.new_customer') }}?type=supplier" 
+                                       class="btn btn-outline-secondary" target="_blank">
+                                        <i class="fas fa-plus"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="warehouse_id" class="form-label">Bodega <span class="text-danger">*</span></label>
+                                <select class="form-select" id="warehouse_id" name="warehouse_id" required>
+                                    {% for warehouse in warehouses %}
+                                    <option value="{{ warehouse.id }}" 
+                                            {% if purchase and purchase.warehouse_id == warehouse.id %}selected{% endif %}>
+                                        {{ warehouse.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="payment_status" class="form-label">Estado de Pago</label>
+                                <select class="form-select" id="payment_status" name="payment_status">
+                                    <option value="pending" {% if purchase and purchase.payment_status == 'pending' %}selected{% endif %}>Pendiente</option>
+                                    <option value="paid" {% if purchase and purchase.payment_status == 'paid' %}selected{% endif %}>Pagado</option>
+                                    <option value="partial" {% if purchase and purchase.payment_status == 'partial' %}selected{% endif %}>Parcial</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="notes" class="form-label">Notas</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3">{{ purchase.notes if purchase else '' }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if not purchase %}
+                <!-- Product Search -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Agregar Productos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="product_search" class="form-label">Buscar Producto</label>
+                                <input type="text" class="form-control" id="product_search" 
+                                       placeholder="Nombre, SKU o código de barras">
+                                <div id="search_results" class="list-group mt-2" style="max-height: 200px; overflow-y: auto;"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="button" class="btn btn-outline-secondary w-100" onclick="scanBarcode()">
+                                    <i class="fas fa-barcode"></i> Escanear Código
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Products Table -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Productos en la Compra</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table" id="products_table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40%;">Producto</th>
+                                        <th style="width: 15%;">Cantidad</th>
+                                        <th style="width: 20%;">Costo Unitario</th>
+                                        <th style="width: 20%;">Total</th>
+                                        <th style="width: 5%;">Acc.</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="products_tbody">
+                                    <!-- Products will be added here dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div id="empty_products" class="text-center py-4">
+                            <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No hay productos agregados</h5>
+                            <p class="text-muted">Busque y agregue productos a esta compra</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Purchase Summary Sidebar -->
+            <div class="col-lg-4">
+                {% if not purchase %}
+                <!-- Purchase Summary -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Resumen de la Compra</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span id="subtotal_display">$0.00</span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="tax_rate" class="form-label">Impuesto %</label>
+                            <input type="number" class="form-control" id="tax_rate" 
+                                   value="0" min="0" max="100" step="0.01">
+                        </div>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Impuesto:</span>
+                            <span id="tax_display">$0.00</span>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between mb-3">
+                            <strong>Total:</strong>
+                            <strong id="total_display">$0.00</strong>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg" id="save_purchase">
+                                <i class="fas fa-save"></i> Guardar Compra
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Supplier Info -->
+                <div class="card mb-4" id="supplier_info" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Información del Proveedor</h5>
+                    </div>
+                    <div class="card-body" id="supplier_details">
+                        <!-- Supplier details will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- Tips -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-lightbulb"></i> Consejos
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i> 
+                                Verifique los precios antes de guardar
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i> 
+                                El inventario se actualizará automáticamente
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i> 
+                                Los costos de productos se actualizarán
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i> 
+                                Puede modificar el estado de pago después
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Hidden fields for form submission -->
+        {% if not purchase %}
+        <input type="hidden" id="products_data" name="products_data" value="[]">
+        {% endif %}
+    </form>
+</div>
+
+{% if not purchase %}
+<script>
+let purchaseProducts = [];
+let productCounter = 0;
+
+// Initialize the form
+$(document).ready(function() {
+    // Supplier selection change
+    $('#supplier_id').change(function() {
+        loadSupplierInfo($(this).val());
+    });
+    
+    // Product search
+    $('#product_search').on('input', function() {
+        const search = $(this).val();
+        if (search.length >= 2) {
+            searchProducts(search);
+        } else {
+            $('#search_results').empty();
+        }
+    });
+    
+    // Calculation changes
+    $('#tax_rate').on('input', calculateTotals);
+    
+    updateDisplay();
+});
+
+// Product search function
+function searchProducts(search) {
+    const warehouseId = $('#warehouse_id').val();
+    
+    $.get('/inventory/search_products', {
+        q: search,
+        warehouse_id: warehouseId
+    }, function(products) {
+        const resultsContainer = $('#search_results');
+        resultsContainer.empty();
+        
+        products.forEach(function(product) {
+            const item = $(`
+                <a href="#" class="list-group-item list-group-item-action" onclick="addProduct(${product.id}, '${product.name}', '${product.sku}', ${product.price1})">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="mb-1">${product.name}</h6>
+                            <small class="text-muted">SKU: ${product.sku}</small>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">Costo sugerido: $${product.price1.toFixed(2)}</small>
+                        </div>
+                    </div>
+                </a>
+            `);
+            resultsContainer.append(item);
+        });
+    });
+}
+
+// Add product to purchase
+function addProduct(id, name, sku, suggestedCost) {
+    // Check if product already exists
+    const existingIndex = purchaseProducts.findIndex(p => p.product_id === id);
+    
+    if (existingIndex >= 0) {
+        // Increase quantity
+        purchaseProducts[existingIndex].quantity += 1;
+    } else {
+        // Add new product
+        purchaseProducts.push({
+            id: ++productCounter,
+            product_id: id,
+            name: name,
+            sku: sku,
+            quantity: 1,
+            unit_cost: suggestedCost || 0
+        });
+    }
+    
+    updateProductsTable();
+    calculateTotals();
+    $('#product_search').val('').focus();
+    $('#search_results').empty();
+}
+
+// Update products table
+function updateProductsTable() {
+    const tbody = $('#products_tbody');
+    tbody.empty();
+    
+    if (purchaseProducts.length === 0) {
+        $('#empty_products').show();
+        $('#products_table').parent().hide();
+        return;
+    }
+    
+    $('#empty_products').hide();
+    $('#products_table').parent().show();
+    
+    purchaseProducts.forEach(function(product, index) {
+        const total = product.quantity * product.unit_cost;
+        
+        const row = $(`
+            <tr>
+                <td>
+                    <strong>${product.name}</strong><br>
+                    <small class="text-muted">SKU: ${product.sku}</small>
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" 
+                           value="${product.quantity}" min="1"
+                           onchange="updateQuantity(${index}, this.value)">
+                </td>
+                <td>
+                    <input type="number" class="form-control form-control-sm" 
+                           value="${product.unit_cost}" step="0.01" min="0"
+                           onchange="updateCost(${index}, this.value)">
+                </td>
+                <td>
+                    <strong>$${total.toFixed(2)}</strong>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                            onclick="removeProduct(${index})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `);
+        
+        tbody.append(row);
+    });
+}
+
+// Update product quantity
+function updateQuantity(index, quantity) {
+    purchaseProducts[index].quantity = parseFloat(quantity);
+    calculateTotals();
+    updateProductsTable();
+}
+
+// Update product cost
+function updateCost(index, cost) {
+    purchaseProducts[index].unit_cost = parseFloat(cost);
+    calculateTotals();
+    updateProductsTable();
+}
+
+// Remove product
+function removeProduct(index) {
+    purchaseProducts.splice(index, 1);
+    updateProductsTable();
+    calculateTotals();
+}
+
+// Calculate totals
+function calculateTotals() {
+    let subtotal = 0;
+    
+    purchaseProducts.forEach(function(product) {
+        subtotal += product.quantity * product.unit_cost;
+    });
+    
+    const taxRate = parseFloat($('#tax_rate').val()) || 0;
+    const taxAmount = subtotal * (taxRate / 100);
+    const total = subtotal + taxAmount;
+    
+    $('#subtotal_display').text(`$${subtotal.toFixed(2)}`);
+    $('#tax_display').text(`$${taxAmount.toFixed(2)}`);
+    $('#total_display').text(`$${total.toFixed(2)}`);
+}
+
+// Load supplier information
+function loadSupplierInfo(supplierId) {
+    if (!supplierId) {
+        $('#supplier_info').hide();
+        return;
+    }
+    
+    // This would fetch supplier info from server
+    // For now, just show the card
+    $('#supplier_info').show();
+}
+
+// Submit purchase form
+$('#purchaseForm').submit(function(e) {
+    e.preventDefault();
+    
+    if (purchaseProducts.length === 0) {
+        alert('Debe agregar al menos un producto a la compra');
+        return;
+    }
+    
+    // Prepare products data
+    $('#products_data').val(JSON.stringify(purchaseProducts));
+    
+    // Submit form
+    this.submit();
+});
+
+// Update display initially
+function updateDisplay() {
+    updateProductsTable();
+    calculateTotals();
+}
+</script>
+{% endif %}
+{% endblock %}

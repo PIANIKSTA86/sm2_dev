@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if user else 'Nuevo' }} Usuario - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-user-cog"></i> {{ 'Editar' if user else 'Nuevo' }} Usuario
+            </h1>
+            <p class="text-muted">{{ 'Modificar información del usuario' if user else 'Crear un nuevo usuario' }}</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a href="{{ url_for('users.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    <!-- User Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <form method="POST" id="userForm">
+                <!-- Basic Information -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Información Básica</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label">Nombre de Usuario <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       value="{{ user.username if user else '' }}" required>
+                                <div class="form-text">Debe ser único en el sistema</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ user.email if user else '' }}" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label">
+                                    Contraseña {% if not user %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="password" name="password" 
+                                           {% if not user %}required{% endif %}>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="togglePassword()">
+                                        <i class="fas fa-eye" id="password-icon"></i>
+                                    </button>
+                                </div>
+                                {% if user %}
+                                <div class="form-text">Dejar en blanco para mantener la contraseña actual</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="confirm_password" class="form-label">
+                                    Confirmar Contraseña {% if not user %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                <input type="password" class="form-control" id="confirm_password" 
+                                       {% if not user %}required{% endif %}>
+                                <div class="invalid-feedback" id="password-mismatch">
+                                    Las contraseñas no coinciden
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Role and Permissions -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Rol y Permisos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="role" class="form-label">Rol del Usuario <span class="text-danger">*</span></label>
+                                <select class="form-select" id="role" name="role" required>
+                                    <option value="">Seleccionar rol</option>
+                                    <option value="admin" {% if user and user.role == 'admin' %}selected{% endif %}>
+                                        Administrador - Acceso completo
+                                    </option>
+                                    <option value="manager" {% if user and user.role == 'manager' %}selected{% endif %}>
+                                        Gerente - Acceso a reportes y configuración
+                                    </option>
+                                    <option value="employee" {% if user and user.role == 'employee' %}selected{% endif %}>
+                                        Empleado - Acceso a ventas e inventario
+                                    </option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="warehouse_id" class="form-label">Bodega Asignada</label>
+                                <select class="form-select" id="warehouse_id" name="warehouse_id">
+                                    <option value="">Todas las bodegas</option>
+                                    {% for warehouse in warehouses %}
+                                    <option value="{{ warehouse.id }}" 
+                                            {% if user and user.warehouse_id == warehouse.id %}selected{% endif %}>
+                                        {{ warehouse.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">Dejar vacío para acceso a todas las bodegas</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Role Description -->
+                        <div class="alert alert-info" id="role-description">
+                            <strong>Seleccione un rol para ver la descripción</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Preferences -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Preferencias</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="theme" class="form-label">Tema de Color</label>
+                                <select class="form-select" id="theme" name="theme">
+                                    <option value="blue" {% if user and user.theme == 'blue' %}selected{% endif %}>Azul</option>
+                                    <option value="green" {% if user and user.theme == 'green' %}selected{% endif %}>Verde</option>
+                                    <option value="purple" {% if user and user.theme == 'purple' %}selected{% endif %}>Morado</option>
+                                    <option value="orange" {% if user and user.theme == 'orange' %}selected{% endif %}>Naranja</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                           {% if not user or user.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        Usuario Activo
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Theme Preview -->
+                        <div class="row">
+                            <div class="col-12">
+                                <label class="form-label">Vista Previa del Tema</label>
+                                <div id="theme-preview" class="border rounded p-3">
+                                    <div class="theme-sample"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('users.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ 'Actualizar' if user else 'Crear' }} Usuario
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Role Information -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shield-alt"></i> Información de Roles
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="role-info mb-3">
+                        <h6 class="text-danger">
+                            <i class="fas fa-crown"></i> Administrador
+                        </h6>
+                        <ul class="small">
+                            <li>Acceso completo al sistema</li>
+                            <li>Gestión de usuarios</li>
+                            <li>Configuración del sistema</li>
+                            <li>Todos los reportes</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="role-info mb-3">
+                        <h6 class="text-warning">
+                            <i class="fas fa-user-tie"></i> Gerente
+                        </h6>
+                        <ul class="small">
+                            <li>Acceso a reportes avanzados</li>
+                            <li>Gestión de inventario</li>
+                            <li>Configuración de productos</li>
+                            <li>Sin acceso a usuarios</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="role-info">
+                        <h6 class="text-primary">
+                            <i class="fas fa-user"></i> Empleado
+                        </h6>
+                        <ul class="small">
+                            <li>Punto de venta (POS)</li>
+                            <li>Gestión de ventas</li>
+                            <li>Consulta de inventario</li>
+                            <li>Reportes básicos</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Security Tips -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lock"></i> Consejos de Seguridad
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Use contraseñas seguras (min. 8 caracteres)
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Incluya letras, números y símbolos
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Asigne el rol mínimo necesario
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Revise periódicamente los usuarios activos
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Desactive usuarios que ya no trabajen
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.theme-sample {
+    height: 30px;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.theme-blue .theme-sample { background-color: #0d6efd; }
+.theme-green .theme-sample { background-color: #198754; }
+.theme-purple .theme-sample { background-color: #6f42c1; }
+.theme-orange .theme-sample { background-color: #fd7e14; }
+</style>
+
+<script>
+// Role descriptions
+const roleDescriptions = {
+    'admin': '<strong>Administrador:</strong> Acceso completo al sistema, incluyendo gestión de usuarios, configuración avanzada y todos los reportes.',
+    'manager': '<strong>Gerente:</strong> Acceso a funciones de gestión, reportes avanzados y configuración de productos. No puede gestionar usuarios.',
+    'employee': '<strong>Empleado:</strong> Acceso a punto de venta, gestión de ventas básica y consulta de inventario. Acceso limitado a reportes.'
+};
+
+$(document).ready(function() {
+    // Handle role selection
+    $('#role').change(function() {
+        const role = $(this).val();
+        if (role && roleDescriptions[role]) {
+            $('#role-description').html(roleDescriptions[role]);
+        } else {
+            $('#role-description').html('<strong>Seleccione un rol para ver la descripción</strong>');
+        }
+    });
+    
+    // Handle theme selection
+    $('#theme').change(function() {
+        const theme = $(this).val();
+        $('#theme-preview').removeClass('theme-blue theme-green theme-purple theme-orange');
+        $('#theme-preview').addClass('theme-' + theme);
+    });
+    
+    // Password confirmation
+    $('#confirm_password').on('input', function() {
+        const password = $('#password').val();
+        const confirmPassword = $(this).val();
+        
+        if (password !== confirmPassword && confirmPassword.length > 0) {
+            $(this).addClass('is-invalid');
+        } else {
+            $(this).removeClass('is-invalid');
+        }
+    });
+    
+    // Initialize role description
+    $('#role').trigger('change');
+    $('#theme').trigger('change');
+});
+
+// Toggle password visibility
+function togglePassword() {
+    const passwordField = $('#password');
+    const passwordIcon = $('#password-icon');
+    
+    if (passwordField.attr('type') === 'password') {
+        passwordField.attr('type', 'text');
+        passwordIcon.removeClass('fa-eye').addClass('fa-eye-slash');
+    } else {
+        passwordField.attr('type', 'password');
+        passwordIcon.removeClass('fa-eye-slash').addClass('fa-eye');
+    }
+}
+
+// Form validation
+$('#userForm').submit(function(e) {
+    const username = $('#username').val().trim();
+    const email = $('#email').val().trim();
+    const password = $('#password').val();
+    const confirmPassword = $('#confirm_password').val();
+    const role = $('#role').val();
+    const isNewUser = {{ 'false' if user else 'true' }};
+    
+    // Basic validation
+    if (!username || !email || !role) {
+        e.preventDefault();
+        alert('Por favor complete todos los campos requeridos');
+        return false;
+    }
+    
+    // Password validation for new users
+    if (isNewUser && !password) {
+        e.preventDefault();
+        alert('La contraseña es requerida para nuevos usuarios');
+        $('#password').focus();
+        return false;
+    }
+    
+    // Password confirmation
+    if (password && password !== confirmPassword) {
+        e.preventDefault();
+        alert('Las contraseñas no coinciden');
+        $('#confirm_password').focus();
+        return false;
+    }
+    
+    // Password strength validation
+    if (password && password.length < 6) {
+        e.preventDefault();
+        alert('La contraseña debe tener al menos 6 caracteres');
+        $('#password').focus();
+        return false;
+    }
+});
+</script>
+{% endblock %}

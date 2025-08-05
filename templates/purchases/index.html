@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Compras - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-truck"></i> Gestión de Compras
+            </h1>
+            <p class="text-muted">Historial y gestión de compras</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a href="{{ url_for('purchases.new_purchase') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nueva Compra
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search }}" placeholder="Número de factura">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="start_date" class="form-label">Fecha Desde</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" 
+                                   value="{{ start_date }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label for="end_date" class="form-label">Fecha Hasta</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" 
+                                   value="{{ end_date }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="supplier_id" class="form-label">Proveedor</label>
+                            <select class="form-select" id="supplier_id" name="supplier_id">
+                                <option value="">Todos los proveedores</option>
+                                {% for supplier in suppliers %}
+                                <option value="{{ supplier.id }}" {% if supplier.id == supplier_id %}selected{% endif %}>
+                                    {{ supplier.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                            <a href="{{ url_for('purchases.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Purchases Table -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Compras Registradas</h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-success" onclick="exportPurchases()">
+                            <i class="fas fa-file-excel"></i> Exportar
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="printPurchases()">
+                            <i class="fas fa-print"></i> Imprimir
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="purchasesTable">
+                            <thead>
+                                <tr>
+                                    <th>Factura</th>
+                                    <th>Fecha</th>
+                                    <th>Proveedor</th>
+                                    <th>Bodega</th>
+                                    <th>Usuario</th>
+                                    <th>Subtotal</th>
+                                    <th>Impuesto</th>
+                                    <th>Total</th>
+                                    <th>Estado Pago</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for purchase in purchases %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('purchases.view_purchase', id=purchase.id) }}" class="text-decoration-none">
+                                            <strong>{{ purchase.invoice_number }}</strong>
+                                        </a>
+                                    </td>
+                                    <td>{{ purchase.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ purchase.supplier.name }}</td>
+                                    <td>{{ purchase.warehouse.name }}</td>
+                                    <td>{{ purchase.user.username }}</td>
+                                    <td>${{ "{:,.2f}".format(purchase.subtotal) }}</td>
+                                    <td>${{ "{:,.2f}".format(purchase.tax_amount) }}</td>
+                                    <td><strong>${{ "{:,.2f}".format(purchase.total) }}</strong></td>
+                                    <td>
+                                        <span class="badge bg-{% if purchase.payment_status == 'paid' %}success{% elif purchase.payment_status == 'pending' %}warning{% else %}danger{% endif %}">
+                                            {{ purchase.payment_status.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('purchases.view_purchase', id=purchase.id) }}" 
+                                               class="btn btn-outline-primary" title="Ver">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('purchases.edit_purchase', id=purchase.id) }}" 
+                                               class="btn btn-outline-secondary" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Summary and Pagination -->
+                    {% if purchases %}
+                    <div class="row mt-4">
+                        <div class="col-md-8">
+                            <!-- Pagination -->
+                            {% if pagination.total_pages > 1 %}
+                            <nav aria-label="Paginación">
+                                <ul class="pagination">
+                                    {% if pagination.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ pagination.prev_num }}&search={{ search }}&start_date={{ start_date }}&end_date={{ end_date }}&supplier_id={{ supplier_id }}">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                    
+                                    {% for page_num in pagination.pages %}
+                                    <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                        <a class="page-link" href="?page={{ page_num }}&search={{ search }}&start_date={{ start_date }}&end_date={{ end_date }}&supplier_id={{ supplier_id }}">
+                                            {{ page_num }}
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                    
+                                    {% if pagination.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ pagination.next_num }}&search={{ search }}&start_date={{ start_date }}&end_date={{ end_date }}&supplier_id={{ supplier_id }}">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Resumen de la Página</h6>
+                                    {% set page_total = purchases|sum(attribute='total') %}
+                                    <p class="mb-1"><strong>Total de compras:</strong> {{ purchases|length }}</p>
+                                    <p class="mb-0"><strong>Valor total:</strong> ${{ "{:,.2f}".format(page_total) }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-truck fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No se encontraron compras</h5>
+                        <p class="text-muted">No hay compras que coincidan con los criterios de búsqueda.</p>
+                        <a href="{{ url_for('purchases.new_purchase') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Crear Primera Compra
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize DataTable
+$(document).ready(function() {
+    $('#purchasesTable').DataTable({
+        "paging": false,
+        "info": false,
+        "searching": false,
+        "ordering": true,
+        "order": [[1, "desc"]], // Order by date descending
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        }
+    });
+});
+
+// Export functionality
+function exportPurchases() {
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = `/reports/export/purchases?${params.toString()}`;
+}
+
+// Print functionality
+function printPurchases() {
+    window.print();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if customer else 'Nuevo' }} Tercero - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-user"></i> {{ 'Editar' if customer else 'Nuevo' }} Tercero
+            </h1>
+            <p class="text-muted">{{ 'Modificar información del tercero' if customer else 'Crear un nuevo tercero' }}</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a href="{{ url_for('customers.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    <!-- Customer Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <form method="POST" id="customerForm">
+                <!-- Basic Information -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Información Básica</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="type" class="form-label">Tipo de Tercero <span class="text-danger">*</span></label>
+                                <select class="form-select" id="type" name="type" required>
+                                    <option value="client" {% if customer and customer.type == 'client' %}selected{% elif request.args.get('type') != 'supplier' %}selected{% endif %}>Cliente</option>
+                                    <option value="supplier" {% if customer and customer.type == 'supplier' %}selected{% elif request.args.get('type') == 'supplier' %}selected{% endif %}>Proveedor</option>
+                                    <option value="employee" {% if customer and customer.type == 'employee' %}selected{% endif %}>Empleado</option>
+                                    <option value="other" {% if customer and customer.type == 'other' %}selected{% endif %}>Otro</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="document_type" class="form-label">Tipo de Documento</label>
+                                <select class="form-select" id="document_type" name="document_type">
+                                    <option value="">Seleccionar</option>
+                                    <option value="cedula" {% if customer and customer.document_type == 'cedula' %}selected{% endif %}>Cédula</option>
+                                    <option value="nit" {% if customer and customer.document_type == 'nit' %}selected{% endif %}>NIT</option>
+                                    <option value="passport" {% if customer and customer.document_type == 'passport' %}selected{% endif %}>Pasaporte</option>
+                                    <option value="ruc" {% if customer and customer.document_type == 'ruc' %}selected{% endif %}>RUC</option>
+                                    <option value="dni" {% if customer and customer.document_type == 'dni' %}selected{% endif %}>DNI</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="document_number" class="form-label">Número de Documento</label>
+                                <input type="text" class="form-control" id="document_number" name="document_number" 
+                                       value="{{ customer.document_number if customer else '' }}">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Nombre Completo <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ customer.name if customer else '' }}" required>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="company" class="form-label">Empresa/Razón Social</label>
+                                <input type="text" class="form-control" id="company" name="company" 
+                                       value="{{ customer.company if customer else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contact Information -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Información de Contacto</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ customer.email if customer else '' }}">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Teléfono</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ customer.phone if customer else '' }}">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="mobile" class="form-label">Móvil</label>
+                                <input type="tel" class="form-control" id="mobile" name="mobile" 
+                                       value="{{ customer.mobile if customer else '' }}">
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="address" class="form-label">Dirección</label>
+                                <textarea class="form-control" id="address" name="address" rows="3">{{ customer.address if customer else '' }}</textarea>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="city" class="form-label">Ciudad</label>
+                                <input type="text" class="form-control" id="city" name="city" 
+                                       value="{{ customer.city if customer else '' }}">
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="state" class="form-label">Estado/Departamento</label>
+                                <input type="text" class="form-control" id="state" name="state" 
+                                       value="{{ customer.state if customer else '' }}">
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="country" class="form-label">País</label>
+                                <input type="text" class="form-control" id="country" name="country" 
+                                       value="{{ customer.country if customer else 'Colombia' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Commercial Information -->
+                <div class="card mb-4" id="commercial_info">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Información Comercial</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="credit_limit" class="form-label">Límite de Crédito</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="credit_limit" name="credit_limit" 
+                                           value="{{ customer.credit_limit if customer else '0' }}" step="0.01" min="0">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="credit_days" class="form-label">Días de Crédito</label>
+                                <input type="number" class="form-control" id="credit_days" name="credit_days" 
+                                       value="{{ customer.credit_days if customer else '0' }}" min="0">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="price_level" class="form-label">Nivel de Precio</label>
+                                <select class="form-select" id="price_level" name="price_level">
+                                    <option value="1" {% if customer and customer.price_level == 1 %}selected{% endif %}>Precio 1 (Público)</option>
+                                    <option value="2" {% if customer and customer.price_level == 2 %}selected{% endif %}>Precio 2 (Mayorista)</option>
+                                    <option value="3" {% if customer and customer.price_level == 3 %}selected{% endif %}>Precio 3 (Distribuidor)</option>
+                                    <option value="4" {% if customer and customer.price_level == 4 %}selected{% endif %}>Precio 4 (Especial)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('customers.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ 'Actualizar' if customer else 'Guardar' }} Tercero
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Tips -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb"></i> Consejos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Complete la información de contacto para facilitar la comunicación
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Configure límites de crédito para clientes frecuentes
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Use diferentes niveles de precio según el tipo de cliente
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Mantenga actualizada la información de contacto
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Type-specific info -->
+            <div class="card" id="type_specific_info">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> <span id="type_info_title">Información</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="client_info" style="display: none;">
+                        <p><strong>Clientes:</strong></p>
+                        <ul>
+                            <li>Configure límites de crédito</li>
+                            <li>Asigne niveles de precio apropiados</li>
+                            <li>Mantenga información de contacto actualizada</li>
+                        </ul>
+                    </div>
+                    
+                    <div id="supplier_info" style="display: none;">
+                        <p><strong>Proveedores:</strong></p>
+                        <ul>
+                            <li>Incluya información de contacto comercial</li>
+                            <li>Configure términos de pago</li>
+                            <li>Mantenga datos fiscales actualizados</li>
+                        </ul>
+                    </div>
+                    
+                    <div id="employee_info" style="display: none;">
+                        <p><strong>Empleados:</strong></p>
+                        <ul>
+                            <li>Complete información personal</li>
+                            <li>Incluya datos de contacto de emergencia</li>
+                            <li>Configure permisos según el cargo</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle type selection changes
+$(document).ready(function() {
+    $('#type').change(function() {
+        updateTypeInfo($(this).val());
+        toggleCommercialInfo($(this).val());
+    });
+    
+    // Initialize on page load
+    updateTypeInfo($('#type').val());
+    toggleCommercialInfo($('#type').val());
+});
+
+function updateTypeInfo(type) {
+    // Hide all info divs
+    $('#client_info, #supplier_info, #employee_info').hide();
+    
+    // Show relevant info
+    switch(type) {
+        case 'client':
+            $('#type_info_title').text('Información de Clientes');
+            $('#client_info').show();
+            break;
+        case 'supplier':
+            $('#type_info_title').text('Información de Proveedores');
+            $('#supplier_info').show();
+            break;
+        case 'employee':
+            $('#type_info_title').text('Información de Empleados');
+            $('#employee_info').show();
+            break;
+        default:
+            $('#type_info_title').text('Información General');
+    }
+}
+
+function toggleCommercialInfo(type) {
+    if (type === 'client' || type === 'supplier') {
+        $('#commercial_info').show();
+    } else {
+        $('#commercial_info').hide();
+    }
+}
+
+// Form validation
+$('#customerForm').submit(function(e) {
+    const name = $('#name').val().trim();
+    const type = $('#type').val();
+    
+    if (!name) {
+        e.preventDefault();
+        alert('El nombre es requerido');
+        $('#name').focus();
+        return false;
+    }
+    
+    if (!type) {
+        e.preventDefault();
+        alert('Debe seleccionar un tipo de tercero');
+        $('#type').focus();
+        return false;
+    }
+});
+
+// Auto-format document number
+$('#document_number').on('input', function() {
+    let value = $(this).val().replace(/\D/g, ''); // Remove non-digits
+    const docType = $('#document_type').val();
+    
+    // Format based on document type
+    if (docType === 'nit' && value.length > 9) {
+        value = value.substring(0, 9) + '-' + value.substring(9, 10);
+    }
+    
+    $(this).val(value);
+});
+</script>
+{% endblock %}

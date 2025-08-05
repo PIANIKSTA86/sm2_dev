@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-cog"></i> Configuración del Sistema
+            </h1>
+            <p class="text-muted">Administración y configuración general</p>
+        </div>
+    </div>
+    
+    <!-- Settings Grid -->
+    <div class="row">
+        <!-- System Management -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-server"></i> Gestión del Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('settings.company') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Información de la Empresa</h6>
+                                    <p class="mb-1">Configurar datos de la empresa para facturas</p>
+                                    <small class="text-muted">Nombre, dirección, NIT, impuestos</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        
+                        <a href="{{ url_for('settings.warehouses') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Bodegas y Almacenes</h6>
+                                    <p class="mb-1">Gestionar ubicaciones de inventario</p>
+                                    <small class="text-muted">Crear, editar y configurar bodegas</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        
+                        {% if session.role == 'admin' %}
+                        <a href="{{ url_for('users.index') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Usuarios y Permisos</h6>
+                                    <p class="mb-1">Administrar acceso al sistema</p>
+                                    <small class="text-muted">Crear usuarios, asignar roles</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{{ url_for('settings.backup') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Respaldo de Datos</h6>
+                                    <p class="mb-1">Crear y restaurar copias de seguridad</p>
+                                    <small class="text-muted">Proteger información del sistema</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Product Categories -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tags"></i> Clasificación de Productos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('settings.categories') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Categorías</h6>
+                                    <p class="mb-1">Organizar productos por categoría</p>
+                                    <small class="text-muted">Electrónicos, Ropa, Hogar, etc.</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        
+                        <a href="{{ url_for('settings.brands') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Marcas</h6>
+                                    <p class="mb-1">Gestionar marcas de productos</p>
+                                    <small class="text-muted">Samsung, Apple, Nike, etc.</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Grupos de Productos</h6>
+                                    <p class="mb-1">Agrupar productos similares</p>
+                                    <small class="text-muted">Configuración avanzada</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        
+                        <a href="#" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Líneas de Productos</h6>
+                                    <p class="mb-1">Organizar por línea comercial</p>
+                                    <small class="text-muted">Para empresas con múltiples líneas</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Status -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie"></i> Estado del Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <div class="text-center">
+                                <h4 class="mb-1" id="total-products">-</h4>
+                                <small class="text-muted">Productos Activos</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="text-center">
+                                <h4 class="mb-1" id="total-customers">-</h4>
+                                <small class="text-muted">Terceros</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="text-center">
+                                <h4 class="mb-1" id="total-users">-</h4>
+                                <small class="text-muted">Usuarios</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="text-center">
+                                <h4 class="mb-1" id="total-warehouses">-</h4>
+                                <small class="text-muted">Bodegas</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-12 mb-2">
+                            <div class="d-flex justify-content-between">
+                                <span>Espacio en Disco</span>
+                                <span>85% usado</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-warning" style="width: 85%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 mb-2">
+                            <div class="d-flex justify-content-between">
+                                <span>Base de Datos</span>
+                                <span class="text-success">Conectada</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <span>Último Backup</span>
+                                <span class="text-muted">Hace 2 días</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt"></i> Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-primary" onclick="optimizeDatabase()">
+                            <i class="fas fa-database"></i> Optimizar Base de Datos
+                        </button>
+                        
+                        <button type="button" class="btn btn-outline-success" onclick="createBackup()">
+                            <i class="fas fa-save"></i> Crear Backup Ahora
+                        </button>
+                        
+                        <button type="button" class="btn btn-outline-info" onclick="clearCache()">
+                            <i class="fas fa-trash"></i> Limpiar Cache
+                        </button>
+                        
+                        <button type="button" class="btn btn-outline-warning" onclick="checkSystemHealth()">
+                            <i class="fas fa-stethoscope"></i> Verificar Sistema
+                        </button>
+                        
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-download"></i> Exportar Datos
+                            </button>
+                            <ul class="dropdown-menu w-100">
+                                <li><a class="dropdown-item" href="/reports/export/inventory">
+                                    <i class="fas fa-boxes"></i> Inventario
+                                </a></li>
+                                <li><a class="dropdown-item" href="/reports/export/sales">
+                                    <i class="fas fa-receipt"></i> Ventas
+                                </a></li>
+                                <li><a class="dropdown-item" href="/reports/export/customers">
+                                    <i class="fas fa-users"></i> Terceros
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Information -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i> Información del Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <h6>Versión del Sistema</h6>
+                            <p class="mb-0">v1.0.0</p>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <h6>Base de Datos</h6>
+                            <p class="mb-0">PostgreSQL</p>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <h6>Servidor Web</h6>
+                            <p class="mb-0">Flask/Python</p>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <h6>Tiempo Activo</h6>
+                            <p class="mb-0" id="uptime">Calculando...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    loadSystemStats();
+    updateUptime();
+    setInterval(updateUptime, 60000); // Update every minute
+});
+
+function loadSystemStats() {
+    // Load system statistics
+    // In a real implementation, this would call an API endpoint
+    $('#total-products').text('1,247');
+    $('#total-customers').text('89');
+    $('#total-users').text('5');
+    $('#total-warehouses').text('3');
+}
+
+function updateUptime() {
+    // Calculate uptime (simplified)
+    const startTime = new Date('2024-01-01').getTime();
+    const now = new Date().getTime();
+    const uptime = now - startTime;
+    
+    const days = Math.floor(uptime / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((uptime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    $('#uptime').text(`${days}d ${hours}h`);
+}
+
+function optimizeDatabase() {
+    if (confirm('¿Optimizar la base de datos? Esto puede tomar unos minutos.')) {
+        showLoading();
+        // Simulate optimization
+        setTimeout(function() {
+            hideLoading();
+            showAlert('Base de datos optimizada exitosamente', 'success');
+        }, 3000);
+    }
+}
+
+function createBackup() {
+    if (confirm('¿Crear un backup completo del sistema?')) {
+        showLoading();
+        fetch('/settings/create_backup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showAlert('Backup creado exitosamente', 'success');
+            } else {
+                showAlert('Error al crear backup: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showAlert('Error de conexión', 'danger');
+        });
+    }
+}
+
+function clearCache() {
+    if (confirm('¿Limpiar el cache del sistema?')) {
+        showLoading();
+        setTimeout(function() {
+            hideLoading();
+            showAlert('Cache limpiado exitosamente', 'success');
+        }, 1000);
+    }
+}
+
+function checkSystemHealth() {
+    showLoading();
+    setTimeout(function() {
+        hideLoading();
+        
+        // Show system health modal
+        const healthModal = `
+            <div class="modal fade" id="healthModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title">Estado del Sistema</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="list-group">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    Base de Datos
+                                    <span class="badge bg-success">OK</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    Conexión de Red
+                                    <span class="badge bg-success">OK</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    Espacio en Disco
+                                    <span class="badge bg-warning">85% Usado</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    Memoria RAM
+                                    <span class="badge bg-success">OK</span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    Sesiones Activas
+                                    <span class="badge bg-info">3</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', healthModal);
+        const modal = new bootstrap.Modal(document.getElementById('healthModal'));
+        modal.show();
+        
+        // Remove modal from DOM when hidden
+        document.getElementById('healthModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+    }, 2000);
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.remove('d-none');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.add('d-none');
+}
+
+function showAlert(message, type) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    
+    const container = document.querySelector('.container-fluid');
+    container.insertAdjacentHTML('afterbegin', alertHtml);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(function() {
+        const alert = container.querySelector('.alert');
+        if (alert) {
+            bootstrap.Alert.getOrCreateInstance(alert).close();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

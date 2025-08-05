@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Usuarios - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-users-cog"></i> Gestión de Usuarios
+            </h1>
+            <p class="text-muted">Administración de usuarios del sistema</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a href="{{ url_for('users.new_user') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nuevo Usuario
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card">
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ search }}" placeholder="Usuario o email">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="role" class="form-label">Rol</label>
+                            <select class="form-select" id="role" name="role">
+                                <option value="">Todos los roles</option>
+                                <option value="admin" {% if role == 'admin' %}selected{% endif %}>Administrador</option>
+                                <option value="manager" {% if role == 'manager' %}selected{% endif %}>Gerente</option>
+                                <option value="employee" {% if role == 'employee' %}selected{% endif %}>Empleado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                            <a href="{{ url_for('users.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Users Table -->
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Lista de Usuarios</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Bodega</th>
+                                    <th>Tema</th>
+                                    <th>Estado</th>
+                                    <th>Creado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle me-2">
+                                                {{ user.username[0].upper() }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ user.username }}</strong>
+                                                {% if user.id == session.user_id %}
+                                                <span class="badge bg-info ms-1">Tú</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ user.email }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if user.role == 'admin' %}danger{% elif user.role == 'manager' %}warning{% else %}primary{% endif %}">
+                                            {% if user.role == 'admin' %}Administrador
+                                            {% elif user.role == 'manager' %}Gerente
+                                            {% else %}Empleado{% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if user.warehouse %}
+                                        {{ user.warehouse.name }}
+                                        {% else %}
+                                        <span class="text-muted">Todas</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="theme-indicator theme-{{ user.theme }}">
+                                            {{ user.theme.title() }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if user.is_active %}
+                                        <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.created_at.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('users.edit_user', id=user.id) }}" 
+                                               class="btn btn-outline-primary" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% if user.id != session.user_id %}
+                                            <form method="POST" action="{{ url_for('users.toggle_status', id=user.id) }}" 
+                                                  style="display: inline;" onsubmit="return confirm('¿Cambiar estado del usuario?')">
+                                                <button type="submit" class="btn btn-outline-warning" title="Cambiar Estado">
+                                                    <i class="fas fa-toggle-{% if user.is_active %}on{% else %}off{% endif %}"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if pagination.total_pages > 1 %}
+                    <nav aria-label="Paginación" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if pagination.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ pagination.prev_num }}&search={{ search }}&role={{ role }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page_num in pagination.pages %}
+                            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                                <a class="page-link" href="?page={{ page_num }}&search={{ search }}&role={{ role }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                            
+                            {% if pagination.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ pagination.next_num }}&search={{ search }}&role={{ role }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    {% if not users %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No se encontraron usuarios</h5>
+                        <p class="text-muted">No hay usuarios que coincidan con los criterios de búsqueda.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--bs-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.theme-indicator {
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: white;
+    font-size: 0.75rem;
+}
+
+.theme-blue { background-color: #0d6efd; }
+.theme-green { background-color: #198754; }
+.theme-purple { background-color: #6f42c1; }
+.theme-orange { background-color: #fd7e14; }
+</style>
+
+<script>
+// Initialize DataTable
+$(document).ready(function() {
+    $('#usersTable').DataTable({
+        "paging": false,
+        "info": false,
+        "searching": false,
+        "ordering": true,
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+        }
+    });
+});
+</script>
+{% endblock %}

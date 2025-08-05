@@ -1,0 +1,384 @@
+/* Theme Color Variables */
+:root {
+  --theme-primary: #0d6efd;
+  --theme-primary-rgb: 13, 110, 253;
+  --theme-secondary: #6c757d;
+  --theme-success: #198754;
+  --theme-info: #0dcaf0;
+  --theme-warning: #ffc107;
+  --theme-danger: #dc3545;
+}
+
+/* Blue Theme (Default) */
+.theme-blue {
+  --theme-primary: #0d6efd;
+  --theme-primary-rgb: 13, 110, 253;
+  --theme-primary-dark: #0b5ed7;
+  --theme-primary-light: #6ea8fe;
+}
+
+/* Green Theme */
+.theme-green {
+  --theme-primary: #198754;
+  --theme-primary-rgb: 25, 135, 84;
+  --theme-primary-dark: #157347;
+  --theme-primary-light: #75b798;
+}
+
+/* Purple Theme */
+.theme-purple {
+  --theme-primary: #6f42c1;
+  --theme-primary-rgb: 111, 66, 193;
+  --theme-primary-dark: #59359a;
+  --theme-primary-light: #a98eda;
+}
+
+/* Orange Theme */
+.theme-orange {
+  --theme-primary: #fd7e14;
+  --theme-primary-rgb: 253, 126, 20;
+  --theme-primary-dark: #e86100;
+  --theme-primary-light: #ffb366;
+}
+
+/* Apply theme colors to Bootstrap components */
+.theme-blue .btn-primary,
+.theme-green .btn-primary,
+.theme-purple .btn-primary,
+.theme-orange .btn-primary {
+  background-color: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+.theme-blue .btn-primary:hover,
+.theme-green .btn-primary:hover,
+.theme-purple .btn-primary:hover,
+.theme-orange .btn-primary:hover {
+  background-color: var(--theme-primary-dark);
+  border-color: var(--theme-primary-dark);
+}
+
+.theme-blue .btn-outline-primary,
+.theme-green .btn-outline-primary,
+.theme-purple .btn-outline-primary,
+.theme-orange .btn-outline-primary {
+  color: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+.theme-blue .btn-outline-primary:hover,
+.theme-green .btn-outline-primary:hover,
+.theme-purple .btn-outline-primary:hover,
+.theme-orange .btn-outline-primary:hover {
+  background-color: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+/* Navigation bar theming */
+.theme-blue .navbar-brand,
+.theme-green .navbar-brand,
+.theme-purple .navbar-brand,
+.theme-orange .navbar-brand {
+  color: var(--theme-primary) !important;
+}
+
+/* Form controls theming */
+.theme-blue .form-control:focus,
+.theme-green .form-control:focus,
+.theme-purple .form-control:focus,
+.theme-orange .form-control:focus {
+  border-color: var(--theme-primary-light);
+  box-shadow: 0 0 0 0.2rem rgba(var(--theme-primary-rgb), 0.25);
+}
+
+.theme-blue .form-select:focus,
+.theme-green .form-select:focus,
+.theme-purple .form-select:focus,
+.theme-orange .form-select:focus {
+  border-color: var(--theme-primary-light);
+  box-shadow: 0 0 0 0.2rem rgba(var(--theme-primary-rgb), 0.25);
+}
+
+/* Progress bars */
+.theme-blue .progress-bar,
+.theme-green .progress-bar,
+.theme-purple .progress-bar,
+.theme-orange .progress-bar {
+  background-color: var(--theme-primary);
+}
+
+/* Badges */
+.theme-blue .badge.bg-primary,
+.theme-green .badge.bg-primary,
+.theme-purple .badge.bg-primary,
+.theme-orange .badge.bg-primary {
+  background-color: var(--theme-primary) !important;
+}
+
+/* Links */
+.theme-blue a,
+.theme-green a,
+.theme-purple a,
+.theme-orange a {
+  color: var(--theme-primary);
+}
+
+.theme-blue a:hover,
+.theme-green a:hover,
+.theme-purple a:hover,
+.theme-orange a:hover {
+  color: var(--theme-primary-dark);
+}
+
+/* Custom components theming */
+.theme-blue .card-header.bg-primary,
+.theme-green .card-header.bg-primary,
+.theme-purple .card-header.bg-primary,
+.theme-orange .card-header.bg-primary {
+  background-color: var(--theme-primary) !important;
+}
+
+/* Alert theming */
+.theme-blue .alert-primary,
+.theme-green .alert-primary,
+.theme-purple .alert-primary,
+.theme-orange .alert-primary {
+  color: var(--theme-primary-dark);
+  background-color: rgba(var(--theme-primary-rgb), 0.1);
+  border-color: rgba(var(--theme-primary-rgb), 0.2);
+}
+
+/* Spinner theming */
+.theme-blue .spinner-border.text-primary,
+.theme-green .spinner-border.text-primary,
+.theme-purple .spinner-border.text-primary,
+.theme-orange .spinner-border.text-primary {
+  color: var(--theme-primary) !important;
+}
+
+/* Dropdown theming */
+.theme-blue .dropdown-item.active,
+.theme-green .dropdown-item.active,
+.theme-purple .dropdown-item.active,
+.theme-orange .dropdown-item.active {
+  background-color: var(--theme-primary);
+}
+
+/* Pagination theming */
+.theme-blue .page-link,
+.theme-green .page-link,
+.theme-purple .page-link,
+.theme-orange .page-link {
+  color: var(--theme-primary);
+}
+
+.theme-blue .page-item.active .page-link,
+.theme-green .page-item.active .page-link,
+.theme-purple .page-item.active .page-link,
+.theme-orange .page-item.active .page-link {
+  background-color: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+/* Custom POS styles */
+.pos-product-card:hover {
+  border-color: var(--theme-primary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(var(--theme-primary-rgb), 0.25);
+}
+
+/* Theme-specific gradients */
+.theme-blue .bg-gradient-primary {
+  background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%) !important;
+}
+
+.theme-green .bg-gradient-primary {
+  background: linear-gradient(135deg, #198754 0%, #157347 100%) !important;
+}
+
+.theme-purple .bg-gradient-primary {
+  background: linear-gradient(135deg, #6f42c1 0%, #59359a 100%) !important;
+}
+
+.theme-orange .bg-gradient-primary {
+  background: linear-gradient(135deg, #fd7e14 0%, #e86100 100%) !important;
+}
+
+/* Theme transition animations */
+.theme-blue,
+.theme-green,
+.theme-purple,
+.theme-orange {
+  transition: all 0.3s ease;
+}
+
+.theme-blue *,
+.theme-green *,
+.theme-purple *,
+.theme-orange * {
+  transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Custom scrollbar theming */
+.theme-blue ::-webkit-scrollbar-thumb:hover,
+.theme-green ::-webkit-scrollbar-thumb:hover,
+.theme-purple ::-webkit-scrollbar-thumb:hover,
+.theme-orange ::-webkit-scrollbar-thumb:hover {
+  background-color: var(--theme-primary);
+}
+
+/* Table theming */
+.theme-blue .table-primary,
+.theme-green .table-primary,
+.theme-purple .table-primary,
+.theme-orange .table-primary {
+  background-color: rgba(var(--theme-primary-rgb), 0.1);
+}
+
+/* Input group theming */
+.theme-blue .input-group-text,
+.theme-green .input-group-text,
+.theme-purple .input-group-text,
+.theme-orange .input-group-text {
+  background-color: rgba(var(--theme-primary-rgb), 0.1);
+  border-color: var(--theme-primary);
+  color: var(--theme-primary);
+}
+
+/* List group theming */
+.theme-blue .list-group-item.active,
+.theme-green .list-group-item.active,
+.theme-purple .list-group-item.active,
+.theme-orange .list-group-item.active {
+  background-color: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+/* Toast theming */
+.theme-blue .toast-header,
+.theme-green .toast-header,
+.theme-purple .toast-header,
+.theme-orange .toast-header {
+  background-color: rgba(var(--theme-primary-rgb), 0.1);
+  color: var(--theme-primary);
+}
+
+/* Switch theming */
+.theme-blue .form-check-input:checked,
+.theme-green .form-check-input:checked,
+.theme-purple .form-check-input:checked,
+.theme-orange .form-check-input:checked {
+  background-color: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+/* Custom utility classes for themes */
+.theme-blue .text-theme,
+.theme-green .text-theme,
+.theme-purple .text-theme,
+.theme-orange .text-theme {
+  color: var(--theme-primary) !important;
+}
+
+.theme-blue .bg-theme,
+.theme-green .bg-theme,
+.theme-purple .bg-theme,
+.theme-orange .bg-theme {
+  background-color: var(--theme-primary) !important;
+}
+
+.theme-blue .border-theme,
+.theme-green .border-theme,
+.theme-purple .border-theme,
+.theme-orange .border-theme {
+  border-color: var(--theme-primary) !important;
+}
+
+/* Dark mode adjustments for themes */
+[data-bs-theme="dark"] .theme-blue,
+[data-bs-theme="dark"] .theme-green,
+[data-bs-theme="dark"] .theme-purple,
+[data-bs-theme="dark"] .theme-orange {
+  --theme-primary-light: var(--theme-primary);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .theme-blue,
+  .theme-green,
+  .theme-purple,
+  .theme-orange {
+    --theme-primary-light: var(--theme-primary-dark);
+  }
+}
+
+/* Responsive theme adjustments */
+@media (max-width: 768px) {
+  .theme-blue .btn,
+  .theme-green .btn,
+  .theme-purple .btn,
+  .theme-orange .btn {
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* Print styles - ensure themes don't interfere with printing */
+@media print {
+  .theme-blue,
+  .theme-green,
+  .theme-purple,
+  .theme-orange {
+    --theme-primary: #000000;
+    --theme-primary-dark: #000000;
+    --theme-primary-light: #666666;
+  }
+}
+
+/* Loading animation with theme colors */
+@keyframes theme-pulse {
+  0% {
+    background-color: rgba(var(--theme-primary-rgb), 0.1);
+  }
+  50% {
+    background-color: rgba(var(--theme-primary-rgb), 0.3);
+  }
+  100% {
+    background-color: rgba(var(--theme-primary-rgb), 0.1);
+  }
+}
+
+.theme-loading {
+  animation: theme-pulse 1.5s ease-in-out infinite;
+}
+
+/* Theme selector component */
+.theme-selector {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: rgba(var(--bs-secondary-rgb), 0.1);
+}
+
+.theme-option {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.theme-option:hover {
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.theme-option.active {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--theme-primary);
+}
+
+.theme-option.blue { background-color: #0d6efd; }
+.theme-option.green { background-color: #198754; }
+.theme-option.purple { background-color: #6f42c1; }
+.theme-option.orange { background-color: #fd7e14; }

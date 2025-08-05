@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if product else 'Nuevo' }} Producto - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-box"></i> {{ 'Editar' if product else 'Nuevo' }} Producto
+            </h1>
+            <p class="text-muted">{{ 'Modificar información del producto' if product else 'Crear un nuevo producto' }}</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a href="{{ url_for('inventory.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    <!-- Product Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <form method="POST" id="productForm">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Información del Producto</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Basic Information -->
+                            <div class="col-md-6 mb-3">
+                                <label for="sku" class="form-label">SKU <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="sku" name="sku" 
+                                       value="{{ product.sku if product else '' }}" required>
+                                <div class="form-text">Código único del producto</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="barcode" class="form-label">Código de Barras</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="barcode" name="barcode" 
+                                           value="{{ product.barcode if product else '' }}">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="scanBarcode()">
+                                        <i class="fas fa-barcode"></i> Escanear
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="name" class="form-label">Nombre del Producto <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ product.name if product else '' }}" required>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="description" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="description" name="description" rows="3">{{ product.description if product else '' }}</textarea>
+                            </div>
+                            
+                            <!-- Categories and Classifications -->
+                            <div class="col-md-6 mb-3">
+                                <label for="category_id" class="form-label">Categoría</label>
+                                <select class="form-select" id="category_id" name="category_id">
+                                    <option value="">Seleccionar categoría</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.id }}" 
+                                            {% if product and product.category_id == category.id %}selected{% endif %}>
+                                        {{ category.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="brand_id" class="form-label">Marca</label>
+                                <select class="form-select" id="brand_id" name="brand_id">
+                                    <option value="">Seleccionar marca</option>
+                                    {% for brand in brands %}
+                                    <option value="{{ brand.id }}" 
+                                            {% if product and product.brand_id == brand.id %}selected{% endif %}>
+                                        {{ brand.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="group_id" class="form-label">Grupo</label>
+                                <select class="form-select" id="group_id" name="group_id">
+                                    <option value="">Seleccionar grupo</option>
+                                    {% for group in groups %}
+                                    <option value="{{ group.id }}" 
+                                            {% if product and product.group_id == group.id %}selected{% endif %}>
+                                        {{ group.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="line_id" class="form-label">Línea</label>
+                                <select class="form-select" id="line_id" name="line_id">
+                                    <option value="">Seleccionar línea</option>
+                                    {% for line in lines %}
+                                    <option value="{{ line.id }}" 
+                                            {% if product and product.line_id == line.id %}selected{% endif %}>
+                                        {{ line.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Unit and Settings -->
+                            <div class="col-md-6 mb-3">
+                                <label for="unit_measure" class="form-label">Unidad de Medida <span class="text-danger">*</span></label>
+                                <select class="form-select" id="unit_measure" name="unit_measure" required>
+                                    <option value="unidad" {% if product and product.unit_measure == 'unidad' %}selected{% endif %}>Unidad</option>
+                                    <option value="kg" {% if product and product.unit_measure == 'kg' %}selected{% endif %}>Kilogramo</option>
+                                    <option value="g" {% if product and product.unit_measure == 'g' %}selected{% endif %}>Gramo</option>
+                                    <option value="lt" {% if product and product.unit_measure == 'lt' %}selected{% endif %}>Litro</option>
+                                    <option value="ml" {% if product and product.unit_measure == 'ml' %}selected{% endif %}>Mililitro</option>
+                                    <option value="m" {% if product and product.unit_measure == 'm' %}selected{% endif %}>Metro</option>
+                                    <option value="cm" {% if product and product.unit_measure == 'cm' %}selected{% endif %}>Centímetro</option>
+                                    <option value="pza" {% if product and product.unit_measure == 'pza' %}selected{% endif %}>Pieza</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="is_service" name="is_service" 
+                                           {% if product and product.is_service %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_service">
+                                        Es un servicio
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="track_serial" name="track_serial" 
+                                           {% if product and product.track_serial %}checked{% endif %}>
+                                    <label class="form-check-label" for="track_serial">
+                                        Rastrear Serial/IMEI
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Pricing Information -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Precios y Costos</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cost" class="form-label">Costo</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="cost" name="cost" 
+                                           value="{{ product.cost if product else '0' }}" step="0.01" min="0">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="price1" class="form-label">Precio 1 (Público)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="price1" name="price1" 
+                                           value="{{ product.price1 if product else '0' }}" step="0.01" min="0">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="price2" class="form-label">Precio 2 (Mayorista)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="price2" name="price2" 
+                                           value="{{ product.price2 if product else '0' }}" step="0.01" min="0">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="price3" class="form-label">Precio 3 (Distribuidor)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="price3" name="price3" 
+                                           value="{{ product.price3 if product else '0' }}" step="0.01" min="0">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="price4" class="form-label">Precio 4 (Especial)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="price4" name="price4" 
+                                           value="{{ product.price4 if product else '0' }}" step="0.01" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Inventory Settings -->
+                {% if not product %}
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Configuración de Inventario</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="min_stock" class="form-label">Stock Mínimo</label>
+                                <input type="number" class="form-control" id="min_stock" name="min_stock" 
+                                       value="0" step="0.001" min="0">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="max_stock" class="form-label">Stock Máximo</label>
+                                <input type="number" class="form-control" id="max_stock" name="max_stock" 
+                                       value="0" step="0.001" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Form Actions -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('inventory.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ 'Actualizar' if product else 'Guardar' }} Producto
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Sidebar with tips -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-lightbulb"></i> Consejos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            El SKU debe ser único para cada producto
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Use códigos de barras para agilizar las ventas
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Configure diferentes niveles de precios según su modelo de negocio
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Active el seguimiento de serial para productos con garantía
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success"></i> 
+                            Defina stock mínimo para recibir alertas
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt"></i> Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('inventory.categories') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-tags"></i> Gestionar Categorías
+                        </a>
+                        <a href="{{ url_for('inventory.brands') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-trademark"></i> Gestionar Marcas
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="generateSKU()">
+                            <i class="fas fa-magic"></i> Generar SKU
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Generate SKU automatically
+function generateSKU() {
+    const name = document.getElementById('name').value;
+    const category = document.getElementById('category_id').selectedOptions[0]?.text || '';
+    
+    if (name) {
+        const sku = (category.substring(0, 3) + name.substring(0, 3) + Math.random().toString(36).substring(2, 8)).toUpperCase();
+        document.getElementById('sku').value = sku;
+    }
+}
+
+// Form validation
+document.getElementById('productForm').addEventListener('submit', function(e) {
+    const sku = document.getElementById('sku').value;
+    const name = document.getElementById('name').value;
+    
+    if (!sku || !name) {
+        e.preventDefault();
+        alert('SKU y Nombre son campos requeridos');
+        return false;
+    }
+});
+
+// Auto-calculate prices based on cost
+document.getElementById('cost').addEventListener('input', function() {
+    const cost = parseFloat(this.value) || 0;
+    if (cost > 0) {
+        // Suggest prices with different margins
+        document.getElementById('price1').value = (cost * 1.5).toFixed(2); // 50% margin
+        document.getElementById('price2').value = (cost * 1.3).toFixed(2); // 30% margin
+        document.getElementById('price3').value = (cost * 1.2).toFixed(2); // 20% margin
+        document.getElementById('price4').value = (cost * 1.1).toFixed(2); // 10% margin
+    }
+});
+</script>
+{% endblock %}
