@@ -29,9 +29,14 @@
                             <strong>Importante:</strong> El respaldo no incluye datos de usuarios por seguridad.
                         </div>
                         
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Descarga automática:</strong> Al hacer clic en "Crear Respaldo", el archivo se descargará automáticamente a su dispositivo.
+                        </div>
+                        
                         <form method="POST" action="{{ url_for('settings.create_backup_route') }}">
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="fas fa-download"></i> Crear Respaldo
+                                <i class="fas fa-download"></i> Crear y Descargar Respaldo
                             </button>
                         </form>
                     </div>

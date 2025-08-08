@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file
 from auth import login_required, admin_required
 from models import Setting, Warehouse, Category, Brand, ProductGroup, ProductLine, db
 from utils.backup import create_backup, restore_backup
@@ -214,12 +214,19 @@ def backup():
 @admin_required
 def create_backup_route():
     try:
-        backup_file = create_backup()
-        flash(f'Backup creado exitosamente: {backup_file}', 'success')
+        backup_filename = create_backup()
+        backup_path = f'/tmp/{backup_filename}'
+        
+        # Return the file for download
+        return send_file(
+            backup_path,
+            as_attachment=True,
+            download_name=backup_filename,
+            mimetype='application/json'
+        )
     except Exception as e:
         flash(f'Error al crear backup: {str(e)}', 'error')
-    
-    return redirect(url_for('settings.backup'))
+        return redirect(url_for('settings.backup'))
 
 @settings_bp.route('/restore_backup', methods=['POST'])
 @admin_required
