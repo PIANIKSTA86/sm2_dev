@@ -60,6 +60,9 @@ Preferred communication style: Simple, everyday language.
 - **Journal Entries**: Full support for accounting transactions with automatic validation
 - **Accounting Periods**: Time-based organization of financial data with period closure
 - **Financial Reports**: Trial balance and other standard accounting reports
+- **Colombian Localization**: Complete integration with all 1,118 Colombian cities and 33 departments
+- **Currency Support**: Colombian peso (COP) formatting and calculations
+- **Customer Data**: Separated first name and last name fields for proper Colombian naming conventions
 
 # External Dependencies
 
@@ -85,9 +88,11 @@ Preferred communication style: Simple, everyday language.
 - **Environment Variables**: Configuration via environment variables for security
 
 ## Database Configuration
-- **SQLite**: Primary database for development with multi-threading support
-- **Database Location**: Local instance folder for data persistence
-- **Connection Settings**: Optimized for concurrent access with check_same_thread disabled
+- **PostgreSQL**: Primary database for production and development
+- **Colombian Localization**: Complete database with 1,118 cities covering all 33 departments of Colombia
+- **Geographic Data**: All municipalities including Antioquia (125), Boyacá (122), Cundinamarca (116), Santander (87), Nariño (64), and all other departments
+- **Accounting Tables**: Full chart of accounts and accounting periods for double-entry bookkeeping
+- **Connection Settings**: Optimized for concurrent access with PostgreSQL connection pooling
 
 ## Optional Integrations
 - **Barcode Scanners**: Support for USB HID and camera-based barcode scanning
