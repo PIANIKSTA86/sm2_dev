@@ -277,7 +277,7 @@ def add_journal_entry():
     
     # Obtener datos para el formulario
     accounts = ChartOfAccounts.query.filter_by(is_active=True, is_detail_account=True).order_by(ChartOfAccounts.code).all()
-    third_parties = Customer.query.filter_by(is_active=True).order_by(Customer.first_name, Customer.last_name).all()
+    third_parties = Customer.query.filter_by(is_active=True).order_by(Customer.full_name).all()
     periods = AccountingPeriod.query.filter_by(is_closed=False).order_by(desc(AccountingPeriod.year), desc(AccountingPeriod.month)).all()
     
     return render_template('accounting/add_journal_entry.html',
@@ -380,8 +380,7 @@ def api_search_third_parties():
         and_(
             Customer.is_active == True,
             or_(
-                Customer.first_name.contains(q),
-                Customer.last_name.contains(q),
+                Customer.full_name.contains(q),
                 Customer.document_number.contains(q)
             )
         )
@@ -389,7 +388,7 @@ def api_search_third_parties():
     
     return jsonify([{
         'id': party.id,
-        'name': f"{party.first_name} {party.last_name}",
-        'document': party.document_number,
-        'display': f"{party.first_name} {party.last_name} ({party.document_number})"
+        'name': party.full_name or '',
+        'document': party.document_number or '',
+        'display': f"{party.full_name or 'Sin nombre'} ({party.document_number or 'Sin documento'})"
     } for party in third_parties])

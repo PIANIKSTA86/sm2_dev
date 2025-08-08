@@ -175,14 +175,14 @@ def customer_report():
     
     # Customer summary
     customer_stats_query = text("""
-        SELECT c.id, c.name, c.email, c.phone,
+        SELECT c.id, c.full_name as name, c.email, c.phone,
                COUNT(s.id) as total_orders,
                COALESCE(SUM(s.total), 0) as total_spent,
                MAX(s.created_at) as last_order_date
         FROM customers c
         LEFT JOIN sales s ON c.id = s.customer_id
         WHERE c.type = :customer_type AND c.is_active = true
-        GROUP BY c.id, c.name, c.email, c.phone
+        GROUP BY c.id, c.full_name, c.email, c.phone
         ORDER BY total_spent DESC
     """)
     
@@ -293,7 +293,7 @@ def export_report(report_type):
         end_date = request.args.get('end_date', datetime.now().strftime('%Y-%m-%d'))
         
         query = text("""
-            SELECT s.invoice_number, s.created_at, c.name as customer,
+            SELECT s.invoice_number, s.created_at, c.full_name as customer,
                    s.subtotal, s.tax_amount, s.discount_amount, s.total,
                    s.payment_method, w.name as warehouse
             FROM sales s
