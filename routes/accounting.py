@@ -1,5 +1,4 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_required, current_user
 from app import db, cache
 from models import (
     ChartOfAccounts, AccountingPeriod, JournalEntry, JournalEntryDetail, 
@@ -13,7 +12,6 @@ import calendar
 accounting_bp = Blueprint('accounting', __name__)
 
 @accounting_bp.route('/')
-@login_required
 def dashboard():
     """Dashboard principal del módulo contable"""
     # Obtener el periodo actual
@@ -42,7 +40,6 @@ def dashboard():
                          current_period=current_period)
 
 @accounting_bp.route('/chart-of-accounts')
-@login_required
 def chart_of_accounts():
     """Plan de cuentas"""
     search = request.args.get('search', '')
@@ -71,7 +68,6 @@ def chart_of_accounts():
                          selected_type=account_type)
 
 @accounting_bp.route('/chart-of-accounts/add', methods=['GET', 'POST'])
-@login_required
 def add_account():
     """Agregar nueva cuenta contable"""
     if request.method == 'POST':
@@ -107,7 +103,6 @@ def add_account():
                          parent_accounts=parent_accounts)
 
 @accounting_bp.route('/periods')
-@login_required
 def periods():
     """Gestión de períodos contables"""
     periods = AccountingPeriod.query.order_by(
@@ -118,7 +113,6 @@ def periods():
     return render_template('accounting/periods.html', periods=periods)
 
 @accounting_bp.route('/periods/create', methods=['GET', 'POST'])
-@login_required
 def create_period():
     """Crear nuevo período contable"""
     if request.method == 'POST':
@@ -151,7 +145,6 @@ def create_period():
     return render_template('accounting/create_period.html')
 
 @accounting_bp.route('/journal-entries')
-@login_required
 def journal_entries():
     """Lista de asientos contables"""
     page = request.args.get('page', 1, type=int)
@@ -181,7 +174,6 @@ def journal_entries():
                          date_to=date_to)
 
 @accounting_bp.route('/journal-entries/add', methods=['GET', 'POST'])
-@login_required
 def add_journal_entry():
     """Crear nuevo asiento contable"""
     if request.method == 'POST':
@@ -268,7 +260,6 @@ def add_journal_entry():
                          periods=periods)
 
 @accounting_bp.route('/journal-entries/<int:entry_id>/post', methods=['POST'])
-@login_required
 def post_journal_entry(entry_id):
     """Contabilizar un asiento (cambiar estado de DRAFT a POSTED)"""
     try:
@@ -319,7 +310,6 @@ def post_journal_entry(entry_id):
     return redirect(url_for('accounting.journal_entries'))
 
 @accounting_bp.route('/reports/trial-balance')
-@login_required
 def trial_balance():
     """Reporte de Balance de Comprobación"""
     period_id = request.args.get('period_id', type=int)
@@ -361,7 +351,6 @@ def trial_balance():
 
 # API endpoints para AJAX
 @accounting_bp.route('/api/accounts')
-@login_required
 def api_accounts():
     """API para obtener cuentas contables (para autocomplete)"""
     search = request.args.get('q', '')
@@ -387,7 +376,6 @@ def api_accounts():
     } for acc in accounts])
 
 @accounting_bp.route('/api/accounts/<int:account_id>/balance')
-@login_required
 def api_account_balance(account_id):
     """API para obtener el saldo actual de una cuenta"""
     period_id = request.args.get('period_id', type=int)

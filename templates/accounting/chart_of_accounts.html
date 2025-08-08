@@ -69,12 +69,7 @@
                     {% for account in accounts %}
                     <tr>
                         <td><strong>{{ account.code }}</strong></td>
-                        <td>
-                            {% if account.level > 1 %}
-                                {{ '&nbsp;' * (account.level * 2) | safe }}
-                            {% endif %}
-                            {{ account.name }}
-                        </td>
+                        <td>{{ account.name }}</td>
                         <td>
                             <span class="badge bg-{% if account.account_type == 'ACTIVO' %}success{% elif account.account_type == 'PASIVO' %}warning{% elif account.account_type == 'PATRIMONIO' %}info{% elif account.account_type == 'INGRESO' %}primary{% else %}secondary{% endif %}">
                                 {{ account.account_type }}
