@@ -26,7 +26,7 @@ Preferred communication style: Simple, everyday language.
 - **File Structure**: Modular design with separate route blueprints for different functional areas
 
 ## Data Storage Solutions
-- **Primary Database**: PostgreSQL configured with connection pooling and optimization settings
+- **Primary Database**: SQLite configured for local development with multi-threading support
 - **Session Storage**: Filesystem-based session management
 - **Caching Layer**: In-memory caching for dashboard statistics and frequent queries
 - **File Storage**: Local filesystem for PDF generation and backup files
@@ -56,6 +56,10 @@ Preferred communication style: Simple, everyday language.
 - **Serial Number Tracking**: Individual item tracking for warranty and service
 - **Theme Customization**: User-selectable color schemes with live preview and persistence
 - **Company Settings**: Comprehensive system configuration including branding and business rules
+- **Accounting Module**: Complete double-entry bookkeeping system with chart of accounts
+- **Journal Entries**: Full support for accounting transactions with automatic validation
+- **Accounting Periods**: Time-based organization of financial data with period closure
+- **Financial Reports**: Trial balance and other standard accounting reports
 
 # External Dependencies
 
@@ -81,9 +85,9 @@ Preferred communication style: Simple, everyday language.
 - **Environment Variables**: Configuration via environment variables for security
 
 ## Database Configuration
-- **PostgreSQL**: Primary database with connection pooling
-- **Database URI**: Configurable via DATABASE_URL environment variable
-- **Connection Pool**: Optimized settings for concurrent access
+- **SQLite**: Primary database for development with multi-threading support
+- **Database Location**: Local instance folder for data persistence
+- **Connection Settings**: Optimized for concurrent access with check_same_thread disabled
 
 ## Optional Integrations
 - **Barcode Scanners**: Support for USB HID and camera-based barcode scanning

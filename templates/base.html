@@ -99,6 +99,30 @@
                             <i class="fas fa-users"></i> Terceros
                         </a>
                     </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-calculator"></i> Contabilidad
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('accounting.dashboard') }}">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard Contable
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('accounting.chart_of_accounts') }}">
+                                <i class="fas fa-list-alt"></i> Plan de Cuentas
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('accounting.journal_entries') }}">
+                                <i class="fas fa-book"></i> Libro Diario
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('accounting.periods') }}">
+                                <i class="fas fa-calendar-alt"></i> Períodos Contables
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('accounting.trial_balance') }}">
+                                <i class="fas fa-balance-scale"></i> Balance de Comprobación
+                            </a></li>
+                        </ul>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('reports.index') }}">
                             <i class="fas fa-chart-bar"></i> Reportes

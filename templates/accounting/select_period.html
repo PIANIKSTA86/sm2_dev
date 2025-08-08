@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Seleccionar Período{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        {% if report_type == 'trial_balance' %}
+        Balance de Comprobación
+        {% else %}
+        Seleccionar Período
+        {% endif %}
+    </h1>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5>Seleccionar Período Contable</h5>
+    </div>
+    <div class="card-body">
+        {% if periods %}
+        <form method="GET" action="{{ url_for('accounting.' + report_type) }}">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="period_id" class="form-label">Período</label>
+                        <select class="form-select" id="period_id" name="period_id" required>
+                            <option value="">Seleccionar período...</option>
+                            {% for period in periods %}
+                            <option value="{{ period.id }}">
+                                {{ period.name }} 
+                                ({{ period.start_date.strftime('%d/%m/%Y') }} - {{ period.end_date.strftime('%d/%m/%Y') }})
+                                {% if period.is_closed %}
+                                <span class="text-muted">[Cerrado]</span>
+                                {% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Generar Reporte
+                    </button>
+                </div>
+            </div>
+        </form>
+        {% else %}
+        <div class="text-center p-4">
+            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+            <h5>No hay períodos contables</h5>
+            <p class="text-muted">Necesita crear al menos un período contable para generar reportes.</p>
+            <a href="{{ url_for('accounting.create_period') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Crear Período
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

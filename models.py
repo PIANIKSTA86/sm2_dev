@@ -255,3 +255,135 @@ class Setting(db.Model):
     value = db.Column(db.Text)
     description = db.Column(db.Text)
     category = db.Column(db.String(50))
+
+# ===== MODELOS CONTABLES - SISTEMA DE PARTIDA DOBLE =====
+
+class ChartOfAccounts(db.Model):
+    """Plan Único de Cuentas Contables"""
+    __tablename__ = 'chart_of_accounts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(20), unique=True, nullable=False)  # Ej: 1.1.01.001
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text)
+    account_type = db.Column(db.String(20), nullable=False)  # ACTIVO, PASIVO, PATRIMONIO, INGRESO, GASTO
+    account_subtype = db.Column(db.String(50))  # CORRIENTE, NO_CORRIENTE, etc.
+    parent_id = db.Column(db.Integer, db.ForeignKey('chart_of_accounts.id'))  # Cuenta padre
+    level = db.Column(db.Integer, nullable=False, default=1)  # Nivel jerárquico
+    is_detail_account = db.Column(db.Boolean, default=True)  # Si acepta movimientos
+    normal_balance = db.Column(db.String(10), nullable=False)  # DEBIT o CREDIT
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relaciones
+    parent = db.relationship('ChartOfAccounts', remote_side=[id], backref='sub_accounts')
+    
+    def __repr__(self):
+        return f'<Account {self.code} - {self.name}>'
+
+class AccountingPeriod(db.Model):
+    """Periodos Contables"""
+    __tablename__ = 'accounting_periods'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)  # Ej: "Enero 2024"
+    year = db.Column(db.Integer, nullable=False)
+    month = db.Column(db.Integer, nullable=False)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=False)
+    is_closed = db.Column(db.Boolean, default=False)
+    closed_date = db.Column(db.DateTime)
+    closed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relaciones
+    closer = db.relationship('User', backref='closed_periods')
+    
+    __table_args__ = (
+        db.UniqueConstraint('year', 'month'),
+    )
+
+class JournalEntry(db.Model):
+    """Asientos Contables"""
+    __tablename__ = 'journal_entries'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    entry_number = db.Column(db.String(20), unique=True, nullable=False)  # Número de asiento
+    entry_date = db.Column(db.Date, nullable=False)
+    reference = db.Column(db.String(100))  # Referencia externa (factura, recibo, etc.)
+    description = db.Column(db.Text, nullable=False)
+    period_id = db.Column(db.Integer, db.ForeignKey('accounting_periods.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Control de estado
+    status = db.Column(db.String(20), default='DRAFT')  # DRAFT, POSTED, REVERSED
+    total_debit = db.Column(db.Numeric(15, 2), default=0)
+    total_credit = db.Column(db.Numeric(15, 2), default=0)
+    
+    # Metadatos
+    source_module = db.Column(db.String(20))  # SALES, PURCHASES, INVENTORY, MANUAL
+    source_id = db.Column(db.Integer)  # ID del documento origen
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    posted_at = db.Column(db.DateTime)
+    
+    # Relaciones
+    period = db.relationship('AccountingPeriod', backref='journal_entries')
+    user = db.relationship('User', backref='journal_entries')
+    
+    __table_args__ = (
+        Index('idx_journal_date', 'entry_date'),
+        Index('idx_journal_period', 'period_id'),
+        Index('idx_journal_source', 'source_module', 'source_id'),
+    )
+
+class JournalEntryDetail(db.Model):
+    """Detalle de Asientos Contables - Partida Doble"""
+    __tablename__ = 'journal_entry_details'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    journal_entry_id = db.Column(db.Integer, db.ForeignKey('journal_entries.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('chart_of_accounts.id'), nullable=False)
+    line_number = db.Column(db.Integer, nullable=False)  # Orden de la línea
+    
+    # Partida doble - debe y haber
+    debit_amount = db.Column(db.Numeric(15, 2), default=0)
+    credit_amount = db.Column(db.Numeric(15, 2), default=0)
+    
+    description = db.Column(db.Text)
+    reference = db.Column(db.String(100))  # Referencia específica de la línea
+    
+    # Relaciones
+    journal_entry = db.relationship('JournalEntry', backref='details')
+    account = db.relationship('ChartOfAccounts', backref='journal_details')
+    
+    __table_args__ = (
+        Index('idx_journal_detail_account', 'account_id'),
+        Index('idx_journal_detail_entry', 'journal_entry_id'),
+    )
+
+class AccountBalance(db.Model):
+    """Saldos de Cuentas por Periodo"""
+    __tablename__ = 'account_balances'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    account_id = db.Column(db.Integer, db.ForeignKey('chart_of_accounts.id'), nullable=False)
+    period_id = db.Column(db.Integer, db.ForeignKey('accounting_periods.id'), nullable=False)
+    
+    # Saldos acumulados
+    opening_balance = db.Column(db.Numeric(15, 2), default=0)  # Saldo inicial
+    debit_total = db.Column(db.Numeric(15, 2), default=0)      # Total débitos
+    credit_total = db.Column(db.Numeric(15, 2), default=0)     # Total créditos
+    closing_balance = db.Column(db.Numeric(15, 2), default=0)  # Saldo final
+    
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relaciones
+    account = db.relationship('ChartOfAccounts', backref='balances')
+    period = db.relationship('AccountingPeriod', backref='account_balances')
+    
+    __table_args__ = (
+        db.UniqueConstraint('account_id', 'period_id'),
+        Index('idx_balance_account', 'account_id'),
+        Index('idx_balance_period', 'period_id'),
+    )

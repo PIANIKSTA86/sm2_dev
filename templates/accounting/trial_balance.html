@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Balance de Comprobación{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Balance de Comprobación</h1>
+</div>
+
+{% if not balances %}
+<div class="card">
+    <div class="card-header">
+        <h5>Seleccionar Período Contable</h5>
+    </div>
+    <div class="card-body">
+        <form method="GET">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="period_id" class="form-label">Período</label>
+                        <select class="form-select" id="period_id" name="period_id" required>
+                            <option value="">Seleccionar período...</option>
+                            {% for period in periods %}
+                            <option value="{{ period.id }}">{{ period.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Generar Balance
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5>Balance de Comprobación - {{ period.name }}</h5>
+        <div>
+            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-sm">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Código</th>
+                        <th>Nombre de la Cuenta</th>
+                        <th>Tipo</th>
+                        <th class="text-end">Saldo Inicial</th>
+                        <th class="text-end">Total Débitos</th>
+                        <th class="text-end">Total Créditos</th>
+                        <th class="text-end">Saldo Final</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for balance in balances %}
+                    <tr>
+                        <td><strong>{{ balance.ChartOfAccounts.code }}</strong></td>
+                        <td>{{ balance.ChartOfAccounts.name }}</td>
+                        <td>
+                            <span class="badge bg-{% if balance.ChartOfAccounts.account_type == 'ACTIVO' %}success{% elif balance.ChartOfAccounts.account_type == 'PASIVO' %}warning{% elif balance.ChartOfAccounts.account_type == 'PATRIMONIO' %}info{% elif balance.ChartOfAccounts.account_type == 'INGRESO' %}primary{% else %}secondary{% endif %}">
+                                {{ balance.ChartOfAccounts.account_type }}
+                            </span>
+                        </td>
+                        <td class="text-end">${{ '{:,.2f}'.format(balance.AccountBalance.opening_balance) }}</td>
+                        <td class="text-end">${{ '{:,.2f}'.format(balance.AccountBalance.debit_total) }}</td>
+                        <td class="text-end">${{ '{:,.2f}'.format(balance.AccountBalance.credit_total) }}</td>
+                        <td class="text-end {% if balance.AccountBalance.closing_balance < 0 %}text-danger{% endif %}">
+                            ${{ '{:,.2f}'.format(balance.AccountBalance.closing_balance) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-dark">
+                    <tr>
+                        <th colspan="4">TOTALES:</th>
+                        <th class="text-end">${{ '{:,.2f}'.format(total_debit) }}</th>
+                        <th class="text-end">${{ '{:,.2f}'.format(total_credit) }}</th>
+                        <th class="text-end">
+                            {% if total_debit == total_credit %}
+                            <span class="text-success">BALANCEADO</span>
+                            {% else %}
+                            <span class="text-danger">DESBALANCEADO</span>
+                            {% endif %}
+                        </th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        
+        {% if total_debit == total_credit %}
+        <div class="alert alert-success mt-3">
+            <i class="fas fa-check-circle"></i>
+            <strong>Balance Correcto:</strong> La suma de débitos es igual a la suma de créditos.
+            Total: ${{ '{:,.2f}'.format(total_debit) }}
+        </div>
+        {% else %}
+        <div class="alert alert-danger mt-3">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Balance Incorrecto:</strong> Hay una diferencia de ${{ '{:,.2f}'.format(abs(total_debit - total_credit)) }} 
+            entre débitos y créditos.
+        </div>
+        {% endif %}
+        
+        <div class="mt-3">
+            <a href="{{ url_for('accounting.trial_balance') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Nuevo Balance
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+    .btn, .card-header .btn {
+        display: none !important;
+    }
+    
+    .container-fluid {
+        margin: 0;
+        padding: 0;
+    }
+    
+    .card {
+        border: none;
+        box-shadow: none;
+    }
+}
+</style>
+{% endblock %}

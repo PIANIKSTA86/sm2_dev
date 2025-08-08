@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Nuevo Período Contable{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Nuevo Período Contable</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('accounting.periods') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="POST">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="year" class="form-label">Año *</label>
+                        <input type="number" class="form-control" id="year" name="year" 
+                               min="2020" max="2030" value="{{ current_year }}" required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="month" class="form-label">Mes *</label>
+                        <select class="form-select" id="month" name="month" required>
+                            <option value="">Seleccionar mes...</option>
+                            <option value="1">Enero</option>
+                            <option value="2">Febrero</option>
+                            <option value="3">Marzo</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Mayo</option>
+                            <option value="6">Junio</option>
+                            <option value="7">Julio</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Septiembre</option>
+                            <option value="10">Octubre</option>
+                            <option value="11">Noviembre</option>
+                            <option value="12">Diciembre</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>Nota:</strong> Las fechas de inicio y fin del período se calcularán automáticamente 
+                basándose en el año y mes seleccionados.
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Crear Período
+                </button>
+                <a href="{{ url_for('accounting.periods') }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Establecer el mes actual por defecto
+    var currentMonth = new Date().getMonth() + 1;
+    $('#month').val(currentMonth);
+});
+</script>
+{% endblock %}
