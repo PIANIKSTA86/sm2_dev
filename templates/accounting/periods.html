@@ -1,75 +1,135 @@
 {% extends "base.html" %}
 
-{% block title %}Períodos Contables{% endblock %}
+{% block title %}Períodos Contables - SM2 Cloud{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Períodos Contables</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{{ url_for('accounting.create_period') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Nuevo Período
-        </a>
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-calendar-alt"></i> Períodos Contables</h2>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('accounting.create_period') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo Período
+                </a>
+                <a href="{{ url_for('accounting.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                {% if periods %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Período</th>
+                                <th>Año</th>
+                                <th>Mes</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Fin</th>
+                                <th>Estado</th>
+                                <th>Asientos</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for period in periods %}
+                            <tr>
+                                <td class="fw-bold">{{ period.name }}</td>
+                                <td>{{ period.year }}</td>
+                                <td>
+                                    {% if period.month %}
+                                    {{ ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+                                        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"][period.month] }}
+                                    {% else %}
+                                    Anual
+                                    {% endif %}
+                                </td>
+                                <td>{{ period.start_date.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ period.end_date.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    {% if period.is_closed %}
+                                    <span class="badge bg-danger">Cerrado</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Abierto</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ period.journal_entries|length }}</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('accounting.journal_entries', period_id=period.id) }}" 
+                                           class="btn btn-outline-primary" title="Ver asientos">
+                                            <i class="fas fa-list"></i>
+                                        </a>
+                                        {% if not period.is_closed %}
+                                        <button class="btn btn-outline-warning" title="Cerrar período" 
+                                                onclick="closePeriod({{ period.id }}, '{{ period.name }}')">
+                                            <i class="fas fa-lock"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info text-center">
+                    <h5><i class="fas fa-calendar-plus"></i> Sin Períodos Contables</h5>
+                    <p>No hay períodos contables creados. Crea el primer período para comenzar.</p>
+                    <a href="{{ url_for('accounting.create_period') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Crear Primer Período
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-body">
-        {% if periods %}
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Período</th>
-                        <th>Año</th>
-                        <th>Mes</th>
-                        <th>Fecha Inicio</th>
-                        <th>Fecha Fin</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for period in periods %}
-                    <tr>
-                        <td><strong>{{ period.name }}</strong></td>
-                        <td>{{ period.year }}</td>
-                        <td>{{ period.month }}</td>
-                        <td>{{ period.start_date.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ period.end_date.strftime('%d/%m/%Y') }}</td>
-                        <td>
-                            {% if period.is_closed %}
-                            <span class="badge bg-danger">Cerrado</span>
-                            {% else %}
-                            <span class="badge bg-success">Abierto</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <button type="button" class="btn btn-outline-primary" title="Ver asientos">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                {% if not period.is_closed %}
-                                <button type="button" class="btn btn-outline-danger" title="Cerrar período">
-                                    <i class="fas fa-lock"></i>
-                                </button>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<!-- Modal para cerrar período -->
+<div class="modal fade" id="closePeriodModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cerrar Período Contable</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro que desea cerrar el período <strong id="periodName"></strong>?</p>
+                <div class="alert alert-warning">
+                    <small><strong>Advertencia:</strong> Una vez cerrado el período, no se podrán crear nuevos asientos en este período.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" id="confirmCloseBtn">Cerrar Período</button>
+            </div>
         </div>
-        {% else %}
-        <div class="text-center p-4">
-            <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
-            <h5>No hay períodos contables</h5>
-            <p class="text-muted">Crea el primer período contable para comenzar a registrar asientos.</p>
-            <a href="{{ url_for('accounting.create_period') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Crear Primer Período
-            </a>
-        </div>
-        {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function closePeriod(periodId, periodName) {
+    document.getElementById('periodName').textContent = periodName;
+    
+    const modal = new bootstrap.Modal(document.getElementById('closePeriodModal'));
+    modal.show();
+    
+    document.getElementById('confirmCloseBtn').onclick = function() {
+        // Aquí se implementaría la llamada AJAX para cerrar el período
+        console.log('Cerrando período:', periodId);
+        modal.hide();
+        // Recargar la página después de cerrar
+        // window.location.reload();
+    };
+}
+</script>
 {% endblock %}

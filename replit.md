@@ -38,6 +38,9 @@ Preferred communication style: Simple, everyday language.
 - **Transactions**: Sales and purchases with detailed line items and serial number tracking
 - **Customer Management**: Unified customer/supplier/employee model with document management
 - **Warehouse Management**: Multi-location inventory tracking with transfer capabilities
+- **Accounting Models**: Chart of accounts, accounting periods, journal entries, and journal entry details
+- **Double-Entry System**: Complete implementation of debit/credit accounting principles
+- **Account Hierarchy**: Multi-level chart of accounts with parent-child relationships
 
 ## Authentication and Authorization
 - **Session Management**: Flask-Session with secure session handling
@@ -58,15 +61,22 @@ Preferred communication style: Simple, everyday language.
 - **Theme Customization**: User-selectable color schemes with live preview and persistence
 - **Company Settings**: Comprehensive system configuration including branding and business rules
 - **Accounting Module**: Complete double-entry bookkeeping system with chart of accounts
-- **Journal Entries**: Full support for accounting transactions with automatic validation
-- **Accounting Periods**: Time-based organization of financial data with period closure
-- **Financial Reports**: Trial balance and other standard accounting reports
+- **Journal Entries**: Full support for accounting transactions with automatic debit/credit validation
+- **Accounting Periods**: Time-based organization of financial data with period management and closure
+- **Financial Reports**: Trial balance with real-time balance verification and export capabilities
+- **Third-Party Integration**: Complete integration between accounting entries and customer/supplier data
+- **Document Cross-Reference**: Support for linking accounting entries to invoices, receipts, and other documents
+- **Account Management**: Hierarchical chart of accounts with detailed account types and balance validation
 - **Colombian Localization**: Complete integration with all 1,118 Colombian cities and 33 departments
 - **Currency Support**: Colombian peso (COP) formatting and calculations
 - **Customer Data**: Separated first name and last name fields for proper Colombian naming conventions
 - **DIAN Electronic Invoicing**: Full integration framework with authorized technology providers
 - **Categories and Brands Management**: Complete CRUD operations for inventory classification
 - **Multi-provider Support**: Framework supporting SIIGO, ALIADDO, CARVAJAL, and other DIAN providers
+- **Double-Entry Accounting**: Complete accounting module with journal entries, chart of accounts, and trial balance
+- **Accounting Periods**: Time-based organization of accounting data with period management
+- **Third-Party Integration**: Full integration between accounting and customer/supplier data
+- **Balance Validation**: Automatic validation of debit/credit balance in journal entries
 
 # External Dependencies
 

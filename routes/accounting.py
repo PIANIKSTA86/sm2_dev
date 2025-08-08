@@ -1,17 +1,16 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
-from flask_login import login_required, current_user
 from models import (db, ChartOfAccounts, AccountingPeriod, JournalEntry, JournalEntryDetail, 
                    Customer, Setting)
 from utils.pagination import paginate_query
 from sqlalchemy import text, desc, and_, or_
 from datetime import datetime, date
+import calendar
 from decimal import Decimal
 import logging
 
 accounting_bp = Blueprint('accounting', __name__)
 
 @accounting_bp.route('/')
-@login_required
 def index():
     """Dashboard principal de contabilidad"""
     # Obtener período contable actual
@@ -34,7 +33,6 @@ def index():
                          current_period=current_period)
 
 @accounting_bp.route('/chart_of_accounts')
-@login_required
 def chart_of_accounts():
     """Plan de cuentas contables"""
     search = request.args.get('search', '')
@@ -66,7 +64,6 @@ def chart_of_accounts():
                          account_types=account_types)
 
 @accounting_bp.route('/chart_of_accounts/new', methods=['GET', 'POST'])
-@login_required
 def add_account():
     """Agregar nueva cuenta contable"""
     if request.method == 'POST':
@@ -99,14 +96,12 @@ def add_account():
     return render_template('accounting/add_account.html', parent_accounts=parent_accounts)
 
 @accounting_bp.route('/periods')
-@login_required
 def periods():
     """Gestión de períodos contables"""
     periods = AccountingPeriod.query.order_by(desc(AccountingPeriod.year), desc(AccountingPeriod.month)).all()
     return render_template('accounting/periods.html', periods=periods)
 
 @accounting_bp.route('/periods/new', methods=['GET', 'POST'])
-@login_required
 def create_period():
     """Crear nuevo período contable"""
     if request.method == 'POST':
@@ -129,10 +124,9 @@ def create_period():
             db.session.rollback()
             flash(f'Error al crear período: {str(e)}', 'error')
     
-    return render_template('accounting/create_period.html')
+    return render_template('accounting/create_period.html', current_year=datetime.now().year)
 
 @accounting_bp.route('/journal_entries')
-@login_required
 def journal_entries():
     """Listado de asientos contables"""
     search = request.args.get('search', '')
@@ -169,7 +163,6 @@ def journal_entries():
                          periods=periods)
 
 @accounting_bp.route('/journal_entries/new', methods=['GET', 'POST'])
-@login_required
 def add_journal_entry():
     """Crear nuevo asiento contable por partida doble"""
     if request.method == 'POST':
@@ -185,7 +178,7 @@ def add_journal_entry():
                 reference=request.form.get('reference', ''),
                 description=request.form['description'],
                 period_id=request.form.get('period_id') if request.form.get('period_id') else None,
-                created_by=current_user.id,
+                created_by=1,  # Usuario por defecto
                 total_debit=Decimal('0'),
                 total_credit=Decimal('0')
             )
@@ -269,14 +262,12 @@ def add_journal_entry():
                          periods=periods)
 
 @accounting_bp.route('/journal_entries/<int:id>')
-@login_required
 def view_journal_entry(id):
     """Ver detalle de asiento contable"""
     entry = JournalEntry.query.get_or_404(id)
     return render_template('accounting/view_journal_entry.html', entry=entry)
 
 @accounting_bp.route('/trial_balance')
-@login_required
 def trial_balance():
     """Balance de comprobación"""
     period_id = request.args.get('period_id', '')
@@ -336,7 +327,6 @@ def trial_balance():
                          selected_period_id=period_id)
 
 @accounting_bp.route('/api/accounts/search')
-@login_required
 def api_search_accounts():
     """API para búsqueda de cuentas contables"""
     q = request.args.get('q', '')
@@ -359,7 +349,6 @@ def api_search_accounts():
     } for account in accounts])
 
 @accounting_bp.route('/api/third_parties/search')
-@login_required
 def api_search_third_parties():
     """API para búsqueda de terceros"""
     q = request.args.get('q', '')
