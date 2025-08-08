@@ -27,13 +27,11 @@ def create_app():
     app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
     
-    # Database configuration - Using SQLite
-    database_path = os.path.join(app.instance_path, 'inventory.db')
-    os.makedirs(app.instance_path, exist_ok=True)
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{database_path}"
+    # Database configuration - Using PostgreSQL
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_recycle": 300,
         "pool_pre_ping": True,
-        "connect_args": {"check_same_thread": False}
     }
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     
