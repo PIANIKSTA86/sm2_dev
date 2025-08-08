@@ -58,10 +58,28 @@
                                        value="{{ customer.document_number if customer else '' }}">
                             </div>
                             
-                            <div class="col-md-6 mb-3">
-                                <label for="name" class="form-label">Nombre Completo <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="name" name="name" 
-                                       value="{{ customer.name if customer else '' }}" required>
+                            <div class="col-md-3 mb-3">
+                                <label for="first_name" class="form-label">Primer Nombre <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="{{ customer.first_name if customer else '' }}" required>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label for="second_name" class="form-label">Segundo Nombre</label>
+                                <input type="text" class="form-control" id="second_name" name="second_name" 
+                                       value="{{ customer.second_name if customer else '' }}">
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label for="first_lastname" class="form-label">Primer Apellido <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="first_lastname" name="first_lastname" 
+                                       value="{{ customer.first_lastname if customer else '' }}" required>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label for="second_lastname" class="form-label">Segundo Apellido</label>
+                                <input type="text" class="form-control" id="second_lastname" name="second_lastname" 
+                                       value="{{ customer.second_lastname if customer else '' }}">
                             </div>
                             
                             <div class="col-12 mb-3">
@@ -103,22 +121,32 @@
                                 <textarea class="form-control" id="address" name="address" rows="3">{{ customer.address if customer else '' }}</textarea>
                             </div>
                             
-                            <div class="col-md-4 mb-3">
-                                <label for="city" class="form-label">Ciudad</label>
-                                <input type="text" class="form-control" id="city" name="city" 
-                                       value="{{ customer.city if customer else '' }}">
+                            <div class="col-md-6 mb-3">
+                                <label for="department_id" class="form-label">Departamento</label>
+                                <select class="form-select" id="department_id" name="department_id" onchange="loadCities()">
+                                    <option value="">Seleccionar departamento...</option>
+                                    {% for dept in departments %}
+                                    <option value="{{ dept.id }}" {% if customer and customer.department_id == dept.id %}selected{% endif %}>
+                                        {{ dept.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
                             </div>
                             
-                            <div class="col-md-4 mb-3">
-                                <label for="state" class="form-label">Estado/Departamento</label>
-                                <input type="text" class="form-control" id="state" name="state" 
-                                       value="{{ customer.state if customer else '' }}">
+                            <div class="col-md-6 mb-3">
+                                <label for="city_id" class="form-label">Ciudad</label>
+                                <select class="form-select" id="city_id" name="city_id">
+                                    <option value="">Seleccionar ciudad...</option>
+                                    {% if customer and customer.city %}
+                                    <option value="{{ customer.city_id }}" selected>{{ customer.city.name }}</option>
+                                    {% endif %}
+                                </select>
                             </div>
                             
                             <div class="col-md-4 mb-3">
                                 <label for="country" class="form-label">País</label>
                                 <input type="text" class="form-control" id="country" name="country" 
-                                       value="{{ customer.country if customer else 'Colombia' }}">
+                                       value="{{ customer.country if customer else 'Colombia' }}" readonly>
                             </div>
                         </div>
                     </div>
@@ -290,15 +318,45 @@ function toggleCommercialInfo(type) {
     }
 }
 
+// Cargar ciudades dinámicamente
+function loadCities() {
+    const departmentId = $('#department_id').val();
+    const citySelect = $('#city_id');
+    
+    // Limpiar ciudades
+    citySelect.html('<option value="">Seleccionar ciudad...</option>');
+    
+    if (departmentId) {
+        fetch(`{{ url_for('customers.get_cities', department_id=0) }}`.replace('0', departmentId))
+            .then(response => response.json())
+            .then(data => {
+                data.cities.forEach(city => {
+                    citySelect.append(`<option value="${city.id}">${city.name}</option>`);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading cities:', error);
+            });
+    }
+}
+
 // Form validation
 $('#customerForm').submit(function(e) {
-    const name = $('#name').val().trim();
+    const firstName = $('#first_name').val().trim();
+    const firstLastname = $('#first_lastname').val().trim();
     const type = $('#type').val();
     
-    if (!name) {
+    if (!firstName) {
         e.preventDefault();
-        alert('El nombre es requerido');
-        $('#name').focus();
+        alert('El primer nombre es requerido');
+        $('#first_name').focus();
+        return false;
+    }
+    
+    if (!firstLastname) {
+        e.preventDefault();
+        alert('El primer apellido es requerido');
+        $('#first_lastname').focus();
         return false;
     }
     

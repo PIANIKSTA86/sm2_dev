@@ -5,6 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_session import Session
 from flask_mail import Mail
 from flask_caching import Cache
+from flask_login import LoginManager
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -17,6 +18,7 @@ class Base(DeclarativeBase):
 db = SQLAlchemy(model_class=Base)
 mail = Mail()
 cache = Cache()
+login_manager = LoginManager()
 
 def create_app():
     app = Flask(__name__)
@@ -57,6 +59,15 @@ def create_app():
     Session(app)
     mail.init_app(app)
     cache.init_app(app)
+    login_manager.init_app(app)
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message = 'Por favor inicie sesión para acceder a esta página.'
+    login_manager.login_message_category = 'warning'
+    
+    @login_manager.user_loader
+    def load_user(user_id):
+        import models
+        return models.User.query.get(int(user_id))
     
     # Register blueprints
     from routes.dashboard import dashboard_bp
@@ -188,6 +199,68 @@ def create_app():
                     end_date=date(current_date.year, current_date.month, calendar.monthrange(current_date.year, current_date.month)[1])
                 )
                 db.session.add(period)
+            
+            # Crear monedas
+            if not models.Currency.query.first():
+                currencies = [
+                    {'code': 'COP', 'name': 'Peso Colombiano', 'symbol': '$', 'default': True, 'rate': 1.0},
+                    {'code': 'USD', 'name': 'Dólar Americano', 'symbol': 'US$', 'default': False, 'rate': 4200.0},
+                    {'code': 'EUR', 'name': 'Euro', 'symbol': '€', 'default': False, 'rate': 4500.0},
+                ]
+                
+                for curr_data in currencies:
+                    currency = models.Currency(
+                        code=curr_data['code'],
+                        name=curr_data['name'],
+                        symbol=curr_data['symbol'],
+                        is_default=curr_data['default'],
+                        exchange_rate=curr_data['rate']
+                    )
+                    db.session.add(currency)
+            
+            # Crear departamentos de Colombia
+            if not models.Department.query.first():
+                departments = [
+                    ('01', 'Amazonas'), ('02', 'Antioquia'), ('03', 'Arauca'), ('04', 'Atlántico'),
+                    ('05', 'Bolívar'), ('06', 'Boyacá'), ('07', 'Caldas'), ('08', 'Caquetá'),
+                    ('09', 'Casanare'), ('10', 'Cauca'), ('11', 'Cesar'), ('12', 'Chocó'),
+                    ('13', 'Córdoba'), ('14', 'Cundinamarca'), ('15', 'Guainía'), ('16', 'Guaviare'),
+                    ('17', 'Huila'), ('18', 'La Guajira'), ('19', 'Magdalena'), ('20', 'Meta'),
+                    ('21', 'Nariño'), ('22', 'Norte de Santander'), ('23', 'Putumayo'), ('24', 'Quindío'),
+                    ('25', 'Risaralda'), ('26', 'San Andrés y Providencia'), ('27', 'Santander'), 
+                    ('28', 'Sucre'), ('29', 'Tolima'), ('30', 'Valle del Cauca'), ('31', 'Vaupés'), 
+                    ('32', 'Vichada'), ('33', 'Bogotá D.C.')
+                ]
+                
+                dept_map = {}
+                for code, name in departments:
+                    dept = models.Department(code=code, name=name)
+                    db.session.add(dept)
+                    db.session.flush()
+                    dept_map[code] = dept.id
+                
+                # Crear algunas ciudades principales
+                cities = [
+                    ('11001', 'Bogotá', '33'), ('05001', 'Medellín', '02'),
+                    ('76001', 'Cali', '30'), ('08001', 'Barranquilla', '04'),
+                    ('13001', 'Cartagena', '05'), ('54001', 'Cúcuta', '22'),
+                    ('66001', 'Pereira', '25'), ('17001', 'Neiva', '17'),
+                    ('52001', 'Pasto', '21'), ('15001', 'Tunja', '06'),
+                    ('63001', 'Armenia', '24'), ('68001', 'Bucaramanga', '27'),
+                    ('73001', 'Ibagué', '29'), ('20001', 'Villavicencio', '20'),
+                    ('70001', 'Sincelejo', '28'), ('41001', 'Neiva', '17'),
+                    ('19001', 'Valledupar', '11'), ('44001', 'Riohacha', '18'),
+                    ('50001', 'Villavicencio', '20'), ('86001', 'Mocoa', '23')
+                ]
+                
+                for city_code, city_name, dept_code in cities:
+                    if dept_code in dept_map:
+                        city = models.City(
+                            code=city_code,
+                            name=city_name,
+                            department_id=dept_map[dept_code]
+                        )
+                        db.session.add(city)
             
             db.session.commit()
     

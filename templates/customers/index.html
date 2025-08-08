@@ -102,7 +102,7 @@
                                     </td>
                                     <td>
                                         <div>
-                                            <strong>{{ customer.name }}</strong>
+                                            <strong>{{ customer.full_name or (customer.first_name + ' ' + customer.first_lastname if customer.first_name and customer.first_lastname else 'Sin nombre') }}</strong>
                                             {% if customer.company %}
                                             <br><small class="text-muted">{{ customer.company }}</small>
                                             {% endif %}
@@ -135,8 +135,8 @@
                                     </td>
                                     <td>
                                         {% if customer.city %}
-                                        {{ customer.city }}
-                                        {% if customer.state %}, {{ customer.state }}{% endif %}
+                                        {{ customer.city.name }}
+                                        {% if customer.department %}, {{ customer.department.name }}{% endif %}
                                         {% else %}
                                         <span class="text-muted">-</span>
                                         {% endif %}

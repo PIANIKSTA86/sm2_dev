@@ -132,31 +132,81 @@ class SerialNumber(db.Model):
     product = db.relationship('Product', backref='serial_numbers')
     warehouse = db.relationship('Warehouse', backref='serial_numbers')
 
+# Modelos geográficos para Colombia
+class Department(db.Model):
+    __tablename__ = 'departments'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(2), unique=True, nullable=False)  # Código DANE
+    name = db.Column(db.String(100), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+
+class City(db.Model):
+    __tablename__ = 'cities'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(5), unique=True, nullable=False)  # Código DANE
+    name = db.Column(db.String(100), nullable=False)
+    department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    department = db.relationship('Department', backref='cities')
+
 class Customer(db.Model):
     __tablename__ = 'customers'
     
     id = db.Column(db.Integer, primary_key=True)
     type = db.Column(db.String(20), nullable=False)  # client, supplier, employee, other
-    document_type = db.Column(db.String(20))  # cedula, nit, passport
+    document_type = db.Column(db.String(20))  # cedula, nit, passport, ti, ce
     document_number = db.Column(db.String(50))
-    name = db.Column(db.String(200), nullable=False)
+    
+    # Separación de nombres y apellidos
+    first_name = db.Column(db.String(100))
+    second_name = db.Column(db.String(100))
+    first_lastname = db.Column(db.String(100))
+    second_lastname = db.Column(db.String(100))
+    
+    # Campo calculado para nombre completo (compatible con versión anterior)
+    full_name = db.Column(db.String(400))
+    
     company = db.Column(db.String(200))
     email = db.Column(db.String(120))
     phone = db.Column(db.String(20))
     mobile = db.Column(db.String(20))
     address = db.Column(db.Text)
-    city = db.Column(db.String(100))
-    state = db.Column(db.String(100))
-    country = db.Column(db.String(100))
+    
+    # Referencias geográficas
+    city_id = db.Column(db.Integer, db.ForeignKey('cities.id'))
+    department_id = db.Column(db.Integer, db.ForeignKey('departments.id'))
+    country = db.Column(db.String(100), default='Colombia')
+    
     credit_limit = db.Column(db.Numeric(12, 2), default=0)
     credit_days = db.Column(db.Integer, default=0)
     price_level = db.Column(db.Integer, default=1)  # 1-4 para price1-4
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Relaciones
+    city = db.relationship('City', backref='customers')
+    department = db.relationship('Department', backref='customers')
+    
+    def update_full_name(self):
+        """Actualiza el campo full_name basado en nombres y apellidos"""
+        parts = []
+        if self.first_name:
+            parts.append(self.first_name)
+        if self.second_name:
+            parts.append(self.second_name)
+        if self.first_lastname:
+            parts.append(self.first_lastname)
+        if self.second_lastname:
+            parts.append(self.second_lastname)
+        self.full_name = ' '.join(parts) if parts else ''
+    
     __table_args__ = (
-        Index('idx_customer_search', 'name', 'document_number', 'email'),
+        Index('idx_customer_search', 'full_name', 'document_number', 'email'),
         Index('idx_customer_type', 'type'),
+        Index('idx_customer_location', 'city_id', 'department_id'),
     )
 
 class Sale(db.Model):
@@ -246,6 +296,17 @@ class PurchaseDetail(db.Model):
     
     purchase = db.relationship('Purchase', backref='details')
     product = db.relationship('Product', backref='purchase_details')
+
+class Currency(db.Model):
+    __tablename__ = 'currencies'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(3), unique=True, nullable=False)  # ISO 4217
+    name = db.Column(db.String(100), nullable=False)
+    symbol = db.Column(db.String(10), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    is_default = db.Column(db.Boolean, default=False)
+    exchange_rate = db.Column(db.Numeric(10, 4), default=1.0)  # Respecto a la moneda base
 
 class Setting(db.Model):
     __tablename__ = 'settings'

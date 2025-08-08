@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from auth import login_required
-from models import Customer, db
+from models import Customer, Department, City, db
 from utils.pagination import paginate_query
 from sqlalchemy import or_
 
@@ -17,7 +17,7 @@ def index():
     if search:
         query = query.filter(
             or_(
-                Customer.name.ilike(f'%{search}%'),
+                Customer.full_name.ilike(f'%{search}%'),
                 Customer.document_number.ilike(f'%{search}%'),
                 Customer.email.ilike(f'%{search}%'),
                 Customer.phone.ilike(f'%{search}%')
@@ -27,7 +27,7 @@ def index():
     if customer_type:
         query = query.filter_by(type=customer_type)
     
-    query = query.order_by(Customer.name)
+    query = query.order_by(Customer.full_name)
     
     customers, pagination = paginate_query(query)
     
@@ -46,19 +46,25 @@ def new_customer():
                 type=request.form['type'],
                 document_type=request.form.get('document_type'),
                 document_number=request.form.get('document_number'),
-                name=request.form['name'],
+                first_name=request.form.get('first_name', '').strip(),
+                second_name=request.form.get('second_name', '').strip(),
+                first_lastname=request.form.get('first_lastname', '').strip(),
+                second_lastname=request.form.get('second_lastname', '').strip(),
                 company=request.form.get('company'),
                 email=request.form.get('email'),
                 phone=request.form.get('phone'),
                 mobile=request.form.get('mobile'),
                 address=request.form.get('address'),
-                city=request.form.get('city'),
-                state=request.form.get('state'),
-                country=request.form.get('country'),
+                city_id=int(request.form['city_id']) if request.form.get('city_id') else None,
+                department_id=int(request.form['department_id']) if request.form.get('department_id') else None,
+                country=request.form.get('country', 'Colombia'),
                 credit_limit=float(request.form.get('credit_limit', 0)),
                 credit_days=int(request.form.get('credit_days', 0)),
                 price_level=int(request.form.get('price_level', 1))
             )
+            
+            # Actualizar nombre completo
+            customer.update_full_name()
             
             db.session.add(customer)
             db.session.commit()
@@ -70,7 +76,8 @@ def new_customer():
             db.session.rollback()
             flash(f'Error al crear cliente: {str(e)}', 'error')
     
-    return render_template('customers/form.html')
+    departments = Department.query.filter_by(is_active=True).order_by(Department.name).all()
+    return render_template('customers/form.html', departments=departments)
 
 @customers_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -82,18 +89,24 @@ def edit_customer(id):
             customer.type = request.form['type']
             customer.document_type = request.form.get('document_type')
             customer.document_number = request.form.get('document_number')
-            customer.name = request.form['name']
+            customer.first_name = request.form.get('first_name', '').strip()
+            customer.second_name = request.form.get('second_name', '').strip()
+            customer.first_lastname = request.form.get('first_lastname', '').strip()
+            customer.second_lastname = request.form.get('second_lastname', '').strip()
             customer.company = request.form.get('company')
             customer.email = request.form.get('email')
             customer.phone = request.form.get('phone')
             customer.mobile = request.form.get('mobile')
             customer.address = request.form.get('address')
-            customer.city = request.form.get('city')
-            customer.state = request.form.get('state')
-            customer.country = request.form.get('country')
+            customer.city_id = int(request.form['city_id']) if request.form.get('city_id') else None
+            customer.department_id = int(request.form['department_id']) if request.form.get('department_id') else None
+            customer.country = request.form.get('country', 'Colombia')
             customer.credit_limit = float(request.form.get('credit_limit', 0))
             customer.credit_days = int(request.form.get('credit_days', 0))
             customer.price_level = int(request.form.get('price_level', 1))
+            
+            # Actualizar nombre completo
+            customer.update_full_name()
             
             db.session.commit()
             
@@ -104,7 +117,8 @@ def edit_customer(id):
             db.session.rollback()
             flash(f'Error al actualizar cliente: {str(e)}', 'error')
     
-    return render_template('customers/form.html', customer=customer)
+    departments = Department.query.filter_by(is_active=True).order_by(Department.name).all()
+    return render_template('customers/form.html', customer=customer, departments=departments)
 
 @customers_bp.route('/<int:id>/toggle_status', methods=['POST'])
 @login_required
@@ -142,3 +156,10 @@ def view_customer(id):
                          customer=customer,
                          recent_sales=recent_sales,
                          recent_purchases=recent_purchases)
+
+@customers_bp.route('/api/cities/<int:department_id>')
+@login_required
+def get_cities(department_id):
+    """API endpoint para obtener ciudades por departamento"""
+    cities = City.query.filter_by(department_id=department_id, is_active=True).order_by(City.name).all()
+    return {'cities': [{'id': city.id, 'name': city.name} for city in cities]}
