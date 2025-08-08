@@ -27,11 +27,13 @@ def create_app():
     app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
     
-    # Database configuration - Using PostgreSQL
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+    # Database configuration - Using SQLite
+    database_path = os.path.join(app.instance_path, 'inventory.db')
+    os.makedirs(app.instance_path, exist_ok=True)
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{database_path}"
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_recycle": 300,
         "pool_pre_ping": True,
+        "connect_args": {"check_same_thread": False}
     }
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     
@@ -78,6 +80,7 @@ def create_app():
     from routes.reports import reports_bp
     from routes.settings import settings_bp
     from routes.accounting import accounting_bp
+    from routes.dian import dian_bp
     from auth import auth_bp
     
     app.register_blueprint(auth_bp)
@@ -91,10 +94,12 @@ def create_app():
     app.register_blueprint(reports_bp, url_prefix='/reports')
     app.register_blueprint(settings_bp, url_prefix='/settings')
     app.register_blueprint(accounting_bp, url_prefix='/accounting')
+    app.register_blueprint(dian_bp, url_prefix='/dian')
     
     with app.app_context():
         # Import models to ensure they're registered
         import models
+        import models_dian
         db.create_all()
         
         # Create default admin user if none exists

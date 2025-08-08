@@ -245,6 +245,96 @@ def brands():
     brands = Brand.query.filter_by(is_active=True).all()
     return render_template('inventory/brands.html', brands=brands)
 
+@inventory_bp.route('/create_category', methods=['POST'])
+@login_required
+def create_category():
+    try:
+        category = Category(
+            name=request.form['name'],
+            description=request.form.get('description')
+        )
+        db.session.add(category)
+        db.session.commit()
+        cache.clear()
+        flash('Categoría creada exitosamente', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al crear categoría: {str(e)}', 'error')
+    return redirect(url_for('inventory.categories'))
+
+@inventory_bp.route('/category/<int:id>/edit', methods=['POST'])
+@login_required
+def edit_category(id):
+    category = Category.query.get_or_404(id)
+    try:
+        category.name = request.form['name']
+        category.description = request.form.get('description')
+        db.session.commit()
+        cache.clear()
+        flash('Categoría actualizada exitosamente', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al actualizar categoría: {str(e)}', 'error')
+    return redirect(url_for('inventory.categories'))
+
+@inventory_bp.route('/category/<int:id>/toggle', methods=['POST'])
+@login_required
+def toggle_category(id):
+    category = Category.query.get_or_404(id)
+    try:
+        category.is_active = request.form.get('active') == 'true'
+        db.session.commit()
+        cache.clear()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+
+@inventory_bp.route('/create_brand', methods=['POST'])
+@login_required
+def create_brand():
+    try:
+        brand = Brand(
+            name=request.form['name'],
+            description=request.form.get('description')
+        )
+        db.session.add(brand)
+        db.session.commit()
+        cache.clear()
+        flash('Marca creada exitosamente', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al crear marca: {str(e)}', 'error')
+    return redirect(url_for('inventory.brands'))
+
+@inventory_bp.route('/brand/<int:id>/edit', methods=['POST'])
+@login_required
+def edit_brand(id):
+    brand = Brand.query.get_or_404(id)
+    try:
+        brand.name = request.form['name']
+        brand.description = request.form.get('description')
+        db.session.commit()
+        cache.clear()
+        flash('Marca actualizada exitosamente', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al actualizar marca: {str(e)}', 'error')
+    return redirect(url_for('inventory.brands'))
+
+@inventory_bp.route('/brand/<int:id>/toggle', methods=['POST'])
+@login_required
+def toggle_brand(id):
+    brand = Brand.query.get_or_404(id)
+    try:
+        brand.is_active = request.form.get('active') == 'true'
+        db.session.commit()
+        cache.clear()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+
 @inventory_bp.route('/transfers')
 @login_required
 def transfers():

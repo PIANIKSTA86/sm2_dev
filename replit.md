@@ -26,10 +26,11 @@ Preferred communication style: Simple, everyday language.
 - **File Structure**: Modular design with separate route blueprints for different functional areas
 
 ## Data Storage Solutions
-- **Primary Database**: SQLite configured for local development with multi-threading support
+- **Primary Database**: SQLite configured for local development with multi-threading support and PostgreSQL ready for production
 - **Session Storage**: Filesystem-based session management
 - **Caching Layer**: In-memory caching for dashboard statistics and frequent queries
 - **File Storage**: Local filesystem for PDF generation and backup files
+- **DIAN Integration**: Complete database schema for electronic invoicing compliance
 
 ## Key Data Models
 - **User Management**: Users with role-based permissions and warehouse assignments
@@ -63,6 +64,9 @@ Preferred communication style: Simple, everyday language.
 - **Colombian Localization**: Complete integration with all 1,118 Colombian cities and 33 departments
 - **Currency Support**: Colombian peso (COP) formatting and calculations
 - **Customer Data**: Separated first name and last name fields for proper Colombian naming conventions
+- **DIAN Electronic Invoicing**: Full integration framework with authorized technology providers
+- **Categories and Brands Management**: Complete CRUD operations for inventory classification
+- **Multi-provider Support**: Framework supporting SIIGO, ALIADDO, CARVAJAL, and other DIAN providers
 
 # External Dependencies
 
@@ -88,11 +92,13 @@ Preferred communication style: Simple, everyday language.
 - **Environment Variables**: Configuration via environment variables for security
 
 ## Database Configuration
-- **PostgreSQL**: Primary database for production and development
+- **SQLite**: Primary database for development with multi-threading support
+- **PostgreSQL**: Available for production deployment with connection pooling
 - **Colombian Localization**: Complete database with 1,118 cities covering all 33 departments of Colombia
 - **Geographic Data**: All municipalities including Antioquia (125), Boyacá (122), Cundinamarca (116), Santander (87), Nariño (64), and all other departments
 - **Accounting Tables**: Full chart of accounts and accounting periods for double-entry bookkeeping
-- **Connection Settings**: Optimized for concurrent access with PostgreSQL connection pooling
+- **DIAN Tables**: Complete schema for electronic invoicing, tax providers, and compliance
+- **Connection Settings**: Optimized for concurrent access with automatic failover support
 
 ## Optional Integrations
 - **Barcode Scanners**: Support for USB HID and camera-based barcode scanning
