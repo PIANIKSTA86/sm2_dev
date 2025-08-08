@@ -1,101 +1,236 @@
 {% extends "base.html" %}
 
-{% block title %}Nuevo Asiento Contable{% endblock %}
+{% block title %}Nuevo Asiento Contable - SM2 Cloud{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Nuevo Asiento Contable</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{{ url_for('accounting.journal_entries') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> Volver
-        </a>
-    </div>
-</div>
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-plus"></i> Nuevo Asiento Contable - Partida Doble</h2>
+            <a href="{{ url_for('accounting.journal_entries') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a Asientos
+            </a>
+        </div>
 
-<div class="card">
-    <div class="card-body">
         <form method="POST" id="journalEntryForm">
-            <!-- Información general del asiento -->
-            <div class="row mb-4">
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="entry_date" class="form-label">Fecha del Asiento *</label>
-                        <input type="date" class="form-control" id="entry_date" name="entry_date" required>
+            <div class="row">
+                <!-- Información General -->
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-info-circle"></i> Información General
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Fecha del Asiento <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" name="entry_date" required
+                                               value="{{ date.today() }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Período Contable</label>
+                                        <select class="form-select" name="period_id">
+                                            <option value="">Seleccionar período</option>
+                                            {% for period in periods %}
+                                            <option value="{{ period.id }}">{{ period.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Referencia</label>
+                                        <input type="text" class="form-control" name="reference" 
+                                               placeholder="Número de factura, recibo, etc.">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Descripción del Asiento <span class="text-danger">*</span></label>
+                                <textarea class="form-control" name="description" rows="2" required
+                                          placeholder="Descripción general del asiento contable"></textarea>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="period_id" class="form-label">Período Contable *</label>
-                        <select class="form-select" id="period_id" name="period_id" required>
-                            <option value="">Seleccionar período...</option>
-                            {% for period in periods %}
-                            <option value="{{ period.id }}">{{ period.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="reference" class="form-label">Referencia</label>
-                        <input type="text" class="form-control" id="reference" name="reference" 
-                               placeholder="Número de factura, recibo, etc.">
-                    </div>
-                </div>
-            </div>
-            
-            <div class="mb-3">
-                <label for="description" class="form-label">Descripción del Asiento *</label>
-                <textarea class="form-control" id="description" name="description" rows="3" required
-                          placeholder="Descripción detallada del asiento contable"></textarea>
-            </div>
 
-            <!-- Líneas del asiento contable -->
-            <h5 class="mb-3">Detalle del Asiento - Partida Doble</h5>
-            
-            <div class="table-responsive">
-                <table class="table table-bordered" id="journalDetailsTable">
-                    <thead class="table-dark">
-                        <tr>
-                            <th width="30%">Cuenta Contable</th>
-                            <th width="30%">Descripción</th>
-                            <th width="15%">Debe</th>
-                            <th width="15%">Haber</th>
-                            <th width="10%">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="journalDetailsBody">
-                        <!-- Las líneas se agregan dinámicamente -->
-                    </tbody>
-                    <tfoot class="table-light">
-                        <tr>
-                            <th colspan="2">TOTALES:</th>
-                            <th class="text-end" id="totalDebit">$0.00</th>
-                            <th class="text-end" id="totalCredit">$0.00</th>
-                            <th></th>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-            
-            <div class="mb-3">
-                <button type="button" class="btn btn-outline-primary" id="addLineBtn">
-                    <i class="fas fa-plus"></i> Agregar Línea
-                </button>
-            </div>
-            
-            <!-- Balance de partida doble -->
-            <div class="alert alert-info" id="balanceAlert">
-                <i class="fas fa-balance-scale"></i>
-                <strong>Balance:</strong> <span id="balanceMessage">Las sumas de débitos y créditos deben ser iguales</span>
-            </div>
-            
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary" id="saveBtn" disabled>
-                    <i class="fas fa-save"></i> Guardar Asiento
-                </button>
-                <a href="{{ url_for('accounting.journal_entries') }}" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Cancelar
-                </a>
+                    <!-- Débitos -->
+                    <div class="card mt-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-plus-circle text-success"></i> Débitos
+                            </h5>
+                            <button type="button" class="btn btn-sm btn-success" onclick="addDebitRow()">
+                                <i class="fas fa-plus"></i> Agregar Débito
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="debitRows">
+                                <!-- Fila de débito inicial -->
+                                <div class="row debit-row mb-2">
+                                    <div class="col-md-3">
+                                        <select class="form-select account-select" name="debit_account_id" required>
+                                            <option value="">Seleccionar cuenta</option>
+                                            {% for account in accounts %}
+                                            <option value="{{ account.id }}">{{ account.code }} - {{ account.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="number" step="0.01" class="form-control debit-amount" 
+                                               name="debit_amount" placeholder="Valor débito" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="text" class="form-control" name="debit_description" 
+                                               placeholder="Descripción">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select class="form-select" name="debit_third_party_id">
+                                            <option value="">Sin tercero</option>
+                                            {% for party in third_parties %}
+                                            <option value="{{ party.id }}">{{ party.first_name }} {{ party.last_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="text" class="form-control" name="debit_reference" 
+                                               placeholder="Documento">
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <strong>Total Débitos: $<span id="totalDebits">0.00</span></strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Créditos -->
+                    <div class="card mt-3">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-minus-circle text-danger"></i> Créditos
+                            </h5>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="addCreditRow()">
+                                <i class="fas fa-plus"></i> Agregar Crédito
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="creditRows">
+                                <!-- Fila de crédito inicial -->
+                                <div class="row credit-row mb-2">
+                                    <div class="col-md-3">
+                                        <select class="form-select account-select" name="credit_account_id" required>
+                                            <option value="">Seleccionar cuenta</option>
+                                            {% for account in accounts %}
+                                            <option value="{{ account.id }}">{{ account.code }} - {{ account.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="number" step="0.01" class="form-control credit-amount" 
+                                               name="credit_amount" placeholder="Valor crédito" required>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="text" class="form-control" name="credit_description" 
+                                               placeholder="Descripción">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <select class="form-select" name="credit_third_party_id">
+                                            <option value="">Sin tercero</option>
+                                            {% for party in third_parties %}
+                                            <option value="{{ party.id }}">{{ party.first_name }} {{ party.last_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="text" class="form-control" name="credit_reference" 
+                                               placeholder="Documento">
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRow(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <strong>Total Créditos: $<span id="totalCredits">0.00</span></strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel de Resumen -->
+                <div class="col-lg-4">
+                    <div class="card position-sticky" style="top: 20px;">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-calculator"></i> Resumen del Asiento
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Total Débitos:</span>
+                                <span class="fw-bold text-success">$<span id="summaryDebits">0.00</span></span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Total Créditos:</span>
+                                <span class="fw-bold text-danger">$<span id="summaryCredits">0.00</span></span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="fw-bold">Diferencia:</span>
+                                <span class="fw-bold" id="summaryDifference">$0.00</span>
+                            </div>
+                            
+                            <div id="balanceStatus" class="alert alert-warning">
+                                <small><i class="fas fa-exclamation-triangle"></i> El asiento debe estar balanceado</small>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary" id="saveBtn" disabled>
+                                    <i class="fas fa-save"></i> Guardar Asiento
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="calculateBalance()">
+                                    <i class="fas fa-calculator"></i> Verificar Balance
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ayuda -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-question-circle"></i> Ayuda - Partida Doble
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <small>
+                                    <strong>Principio de Partida Doble:</strong><br>
+                                    Todo asiento contable debe tener al menos una cuenta deudora y una cuenta acreedora, 
+                                    y la suma de débitos debe ser igual a la suma de créditos.
+                                </small>
+                            </div>
+                            <h6 class="small">Recordatorio:</h6>
+                            <ul class="small">
+                                <li><strong>Débitos:</strong> Aumentan activos y gastos</li>
+                                <li><strong>Créditos:</strong> Aumentan pasivos, patrimonio e ingresos</li>
+                                <li>Débitos = Créditos (siempre)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
             </div>
         </form>
     </div>
@@ -104,157 +239,107 @@
 
 {% block extra_js %}
 <script>
-let lineCounter = 0;
-const accounts = {{ accounts | tojson }};
+let debitRowCount = 1;
+let creditRowCount = 1;
 
-$(document).ready(function() {
-    // Agregar las primeras dos líneas automáticamente
-    addJournalLine();
-    addJournalLine();
+function addDebitRow() {
+    const debitRows = document.getElementById('debitRows');
+    const newRow = document.querySelector('.debit-row').cloneNode(true);
     
-    $('#addLineBtn').click(function() {
-        addJournalLine();
-    });
-    
-    // Evento para calcular totales al cambiar valores
-    $(document).on('input', '.debit-input, .credit-input', function() {
-        calculateTotals();
-        validateBalance();
-    });
-    
-    // Auto-completar para cuentas contables
-    $(document).on('focus', '.account-select', function() {
-        if (!$(this).hasClass('select2-hidden-accessible')) {
-            $(this).select2({
-                placeholder: 'Buscar cuenta...',
-                allowClear: true,
-                width: '100%'
-            });
+    // Limpiar valores
+    newRow.querySelectorAll('input, select').forEach(input => {
+        if (input.type !== 'button') {
+            input.value = '';
         }
     });
-});
-
-function addJournalLine() {
-    lineCounter++;
     
-    const newRow = `
-        <tr id="line${lineCounter}">
-            <td>
-                <select class="form-select account-select" name="account_id" required>
-                    <option value="">Seleccionar cuenta...</option>
-                    ${accounts.map(acc => `<option value="${acc.id}">${acc.code} - ${acc.name}</option>`).join('')}
-                </select>
-            </td>
-            <td>
-                <input type="text" class="form-control" name="line_description" 
-                       placeholder="Descripción de la línea">
-            </td>
-            <td>
-                <input type="number" class="form-control debit-input text-end" name="debit" 
-                       step="0.01" min="0" placeholder="0.00">
-            </td>
-            <td>
-                <input type="number" class="form-control credit-input text-end" name="credit" 
-                       step="0.01" min="0" placeholder="0.00">
-            </td>
-            <td>
-                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeLine(${lineCounter})" 
-                        title="Eliminar línea">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-    `;
-    
-    $('#journalDetailsBody').append(newRow);
-    calculateTotals();
+    debitRows.appendChild(newRow);
+    debitRowCount++;
+    calculateBalance();
 }
 
-function removeLine(lineId) {
-    if ($('#journalDetailsBody tr').length > 2) {
-        $(`#line${lineId}`).remove();
-        calculateTotals();
-        validateBalance();
-    } else {
-        alert('Debe mantener al menos 2 líneas en el asiento contable.');
-    }
-}
-
-function calculateTotals() {
-    let totalDebit = 0;
-    let totalCredit = 0;
+function addCreditRow() {
+    const creditRows = document.getElementById('creditRows');
+    const newRow = document.querySelector('.credit-row').cloneNode(true);
     
-    $('.debit-input').each(function() {
-        const value = parseFloat($(this).val()) || 0;
-        totalDebit += value;
+    // Limpiar valores
+    newRow.querySelectorAll('input, select').forEach(input => {
+        if (input.type !== 'button') {
+            input.value = '';
+        }
     });
     
-    $('.credit-input').each(function() {
-        const value = parseFloat($(this).val()) || 0;
-        totalCredit += value;
+    creditRows.appendChild(newRow);
+    creditRowCount++;
+    calculateBalance();
+}
+
+function removeRow(button) {
+    const row = button.closest('.row');
+    const isDebitRow = row.classList.contains('debit-row');
+    const isLastRow = isDebitRow ? 
+        document.querySelectorAll('.debit-row').length <= 1 :
+        document.querySelectorAll('.credit-row').length <= 1;
+    
+    if (!isLastRow) {
+        row.remove();
+        calculateBalance();
+    }
+}
+
+function calculateBalance() {
+    let totalDebits = 0;
+    let totalCredits = 0;
+    
+    // Sumar débitos
+    document.querySelectorAll('.debit-amount').forEach(input => {
+        const value = parseFloat(input.value) || 0;
+        totalDebits += value;
     });
     
-    $('#totalDebit').text(`$${totalDebit.toFixed(2)}`);
-    $('#totalCredit').text(`$${totalCredit.toFixed(2)}`);
+    // Sumar créditos
+    document.querySelectorAll('.credit-amount').forEach(input => {
+        const value = parseFloat(input.value) || 0;
+        totalCredits += value;
+    });
     
-    return { totalDebit, totalCredit };
-}
-
-function validateBalance() {
-    const { totalDebit, totalCredit } = calculateTotals();
-    const isBalanced = Math.abs(totalDebit - totalCredit) < 0.01;
-    const hasValues = totalDebit > 0 && totalCredit > 0;
+    // Actualizar totales
+    document.getElementById('totalDebits').textContent = totalDebits.toFixed(2);
+    document.getElementById('totalCredits').textContent = totalCredits.toFixed(2);
+    document.getElementById('summaryDebits').textContent = totalDebits.toFixed(2);
+    document.getElementById('summaryCredits').textContent = totalCredits.toFixed(2);
     
-    if (isBalanced && hasValues) {
-        $('#balanceAlert').removeClass('alert-warning alert-danger').addClass('alert-success');
-        $('#balanceMessage').html('<i class="fas fa-check-circle"></i> ¡Asiento balanceado correctamente!');
-        $('#saveBtn').prop('disabled', false);
-    } else if (!hasValues) {
-        $('#balanceAlert').removeClass('alert-success alert-danger').addClass('alert-info');
-        $('#balanceMessage').text('Ingrese los importes de débitos y créditos');
-        $('#saveBtn').prop('disabled', true);
+    const difference = totalDebits - totalCredits;
+    document.getElementById('summaryDifference').textContent = difference.toFixed(2);
+    
+    // Actualizar estado del balance
+    const balanceStatus = document.getElementById('balanceStatus');
+    const saveBtn = document.getElementById('saveBtn');
+    
+    if (Math.abs(difference) < 0.01 && totalDebits > 0) {
+        balanceStatus.className = 'alert alert-success';
+        balanceStatus.innerHTML = '<small><i class="fas fa-check-circle"></i> Asiento balanceado correctamente</small>';
+        saveBtn.disabled = false;
+    } else if (difference === 0 && totalDebits === 0) {
+        balanceStatus.className = 'alert alert-warning';
+        balanceStatus.innerHTML = '<small><i class="fas fa-exclamation-triangle"></i> Ingrese valores para balancear</small>';
+        saveBtn.disabled = true;
     } else {
-        $('#balanceAlert').removeClass('alert-success alert-info').addClass('alert-danger');
-        $('#balanceMessage').html(`<i class="fas fa-exclamation-triangle"></i> Asiento desbalanceado. Diferencia: $${Math.abs(totalDebit - totalCredit).toFixed(2)}`);
-        $('#saveBtn').prop('disabled', true);
+        balanceStatus.className = 'alert alert-danger';
+        const message = difference > 0 ? 'Débitos exceden créditos' : 'Créditos exceden débitos';
+        balanceStatus.innerHTML = `<small><i class="fas fa-times-circle"></i> ${message} por $${Math.abs(difference).toFixed(2)}</small>`;
+        saveBtn.disabled = true;
     }
 }
 
-// Validación al enviar el formulario
-$('#journalEntryForm').submit(function(e) {
-    const { totalDebit, totalCredit } = calculateTotals();
-    
-    if (Math.abs(totalDebit - totalCredit) >= 0.01) {
-        e.preventDefault();
-        alert('Error: La suma de débitos debe ser igual a la suma de créditos');
-        return false;
-    }
-    
-    if (totalDebit === 0 || totalCredit === 0) {
-        e.preventDefault();
-        alert('Error: Debe ingresar al menos un débito y un crédito');
-        return false;
+// Event listeners para recalcular automáticamente
+document.addEventListener('input', function(e) {
+    if (e.target.classList.contains('debit-amount') || e.target.classList.contains('credit-amount')) {
+        calculateBalance();
     }
 });
 
-// Evitar que se pueda ingresar tanto débito como crédito en la misma línea
-$(document).on('input', '.debit-input', function() {
-    if ($(this).val() && parseFloat($(this).val()) > 0) {
-        $(this).closest('tr').find('.credit-input').val('');
-    }
-});
-
-$(document).on('input', '.credit-input', function() {
-    if ($(this).val() && parseFloat($(this).val()) > 0) {
-        $(this).closest('tr').find('.debit-input').val('');
-    }
-});
+// Calcular balance inicial
+calculateBalance();
 </script>
-
-<!-- Select2 CSS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
-
-<!-- Select2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 {% endblock %}

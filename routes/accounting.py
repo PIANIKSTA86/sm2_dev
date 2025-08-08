@@ -1,51 +1,46 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from app import db, cache
-from models import (
-    ChartOfAccounts, AccountingPeriod, JournalEntry, JournalEntryDetail, 
-    AccountBalance, User
-)
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
+from flask_login import login_required, current_user
+from models import (db, ChartOfAccounts, AccountingPeriod, JournalEntry, JournalEntryDetail, 
+                   Customer, Setting)
+from utils.pagination import paginate_query
+from sqlalchemy import text, desc, and_, or_
 from datetime import datetime, date
-from sqlalchemy import func, and_, or_, desc, asc
 from decimal import Decimal
-import calendar
+import logging
 
 accounting_bp = Blueprint('accounting', __name__)
 
 @accounting_bp.route('/')
-def dashboard():
-    """Dashboard principal del módulo contable"""
-    # Obtener el periodo actual
-    current_date = datetime.now()
-    current_period = AccountingPeriod.query.filter(
-        and_(
-            AccountingPeriod.year == current_date.year,
-            AccountingPeriod.month == current_date.month
-        )
-    ).first()
+@login_required
+def index():
+    """Dashboard principal de contabilidad"""
+    # Obtener período contable actual
+    current_period = AccountingPeriod.query.filter_by(is_closed=False).order_by(desc(AccountingPeriod.start_date)).first()
     
     # Estadísticas básicas
     stats = {
         'total_accounts': ChartOfAccounts.query.filter_by(is_active=True).count(),
-        'current_period': current_period.name if current_period else 'Sin período',
-        'pending_entries': JournalEntry.query.filter_by(status='DRAFT').count(),
-        'posted_entries': JournalEntry.query.filter_by(status='POSTED').count()
+        'journal_entries': JournalEntry.query.count(),
+        'current_period': current_period.name if current_period else 'Sin período activo',
+        'open_periods': AccountingPeriod.query.filter_by(is_closed=False).count()
     }
     
     # Últimos asientos contables
-    recent_entries = JournalEntry.query.order_by(desc(JournalEntry.created_at)).limit(5).all()
+    recent_entries = JournalEntry.query.order_by(desc(JournalEntry.created_at)).limit(10).all()
     
     return render_template('accounting/dashboard.html', 
                          stats=stats, 
                          recent_entries=recent_entries,
                          current_period=current_period)
 
-@accounting_bp.route('/chart-of-accounts')
+@accounting_bp.route('/chart_of_accounts')
+@login_required
 def chart_of_accounts():
-    """Plan de cuentas"""
+    """Plan de cuentas contables"""
     search = request.args.get('search', '')
-    account_type = request.args.get('type', '')
+    account_type = request.args.get('account_type', '')
     
-    query = ChartOfAccounts.query.filter_by(is_active=True)
+    query = ChartOfAccounts.query
     
     if search:
         query = query.filter(or_(
@@ -54,34 +49,39 @@ def chart_of_accounts():
         ))
     
     if account_type:
-        query = query.filter_by(account_type=account_type)
+        query = query.filter(ChartOfAccounts.account_type == account_type)
     
-    accounts = query.order_by(ChartOfAccounts.code).all()
+    query = query.order_by(ChartOfAccounts.code)
+    pagination = paginate_query(query, request.args.get('page', 1, type=int))
     
-    # Tipos de cuenta disponibles
-    account_types = ['ACTIVO', 'PASIVO', 'PATRIMONIO', 'INGRESO', 'GASTO']
+    # Tipos de cuenta para filtro
+    account_types = db.session.query(ChartOfAccounts.account_type.distinct()).all()
+    account_types = [t[0] for t in account_types]
     
-    return render_template('accounting/chart_of_accounts.html', 
-                         accounts=accounts, 
-                         account_types=account_types,
+    return render_template('accounting/chart_of_accounts.html',
+                         accounts=pagination.items,
+                         pagination=pagination,
                          search=search,
-                         selected_type=account_type)
+                         account_type=account_type,
+                         account_types=account_types)
 
-@accounting_bp.route('/chart-of-accounts/add', methods=['GET', 'POST'])
+@accounting_bp.route('/chart_of_accounts/new', methods=['GET', 'POST'])
+@login_required
 def add_account():
     """Agregar nueva cuenta contable"""
     if request.method == 'POST':
         try:
             account = ChartOfAccounts(
-                code=request.form['code'].strip(),
-                name=request.form['name'].strip(),
-                description=request.form.get('description', '').strip(),
+                code=request.form['code'],
+                name=request.form['name'],
+                description=request.form.get('description', ''),
                 account_type=request.form['account_type'],
-                account_subtype=request.form.get('account_subtype', '').strip(),
-                parent_id=request.form.get('parent_id') or None,
+                account_subtype=request.form.get('account_subtype', ''),
+                parent_id=request.form.get('parent_id') if request.form.get('parent_id') else None,
                 level=int(request.form.get('level', 1)),
-                is_detail_account=bool(request.form.get('is_detail_account')),
-                normal_balance=request.form['normal_balance']
+                is_detail_account=request.form.get('is_detail_account') == 'on',
+                normal_balance=request.form['normal_balance'],
+                is_active=True
             )
             
             db.session.add(account)
@@ -91,46 +91,33 @@ def add_account():
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al crear la cuenta: {str(e)}', 'error')
+            flash(f'Error al crear cuenta: {str(e)}', 'error')
     
-    # Para el formulario, obtener cuentas padre
-    parent_accounts = ChartOfAccounts.query.filter_by(
-        is_active=True, 
-        is_detail_account=False
-    ).order_by(ChartOfAccounts.code).all()
+    # Obtener cuentas padre para el select
+    parent_accounts = ChartOfAccounts.query.filter_by(is_active=True).order_by(ChartOfAccounts.code).all()
     
-    return render_template('accounting/add_account.html', 
-                         parent_accounts=parent_accounts)
+    return render_template('accounting/add_account.html', parent_accounts=parent_accounts)
 
 @accounting_bp.route('/periods')
+@login_required
 def periods():
     """Gestión de períodos contables"""
-    periods = AccountingPeriod.query.order_by(
-        desc(AccountingPeriod.year), 
-        desc(AccountingPeriod.month)
-    ).all()
-    
+    periods = AccountingPeriod.query.order_by(desc(AccountingPeriod.year), desc(AccountingPeriod.month)).all()
     return render_template('accounting/periods.html', periods=periods)
 
-@accounting_bp.route('/periods/create', methods=['GET', 'POST'])
+@accounting_bp.route('/periods/new', methods=['GET', 'POST'])
+@login_required
 def create_period():
     """Crear nuevo período contable"""
     if request.method == 'POST':
         try:
-            year = int(request.form['year'])
-            month = int(request.form['month'])
-            
-            # Calcular fechas del período
-            start_date = date(year, month, 1)
-            last_day = calendar.monthrange(year, month)[1]
-            end_date = date(year, month, last_day)
-            
             period = AccountingPeriod(
-                name=f"{calendar.month_name[month]} {year}",
-                year=year,
-                month=month,
-                start_date=start_date,
-                end_date=end_date
+                name=request.form['name'],
+                year=int(request.form['year']),
+                month=int(request.form['month']),
+                start_date=datetime.strptime(request.form['start_date'], '%Y-%m-%d').date(),
+                end_date=datetime.strptime(request.form['end_date'], '%Y-%m-%d').date(),
+                is_closed=False
             )
             
             db.session.add(period)
@@ -140,101 +127,128 @@ def create_period():
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al crear el período: {str(e)}', 'error')
+            flash(f'Error al crear período: {str(e)}', 'error')
     
     return render_template('accounting/create_period.html')
 
-@accounting_bp.route('/journal-entries')
+@accounting_bp.route('/journal_entries')
+@login_required
 def journal_entries():
-    """Lista de asientos contables"""
-    page = request.args.get('page', 1, type=int)
-    status = request.args.get('status', '')
-    date_from = request.args.get('date_from', '')
-    date_to = request.args.get('date_to', '')
+    """Listado de asientos contables"""
+    search = request.args.get('search', '')
+    period_id = request.args.get('period_id', '')
     
     query = JournalEntry.query
     
-    if status:
-        query = query.filter_by(status=status)
+    if search:
+        query = query.filter(or_(
+            JournalEntry.entry_number.contains(search),
+            JournalEntry.reference.contains(search),
+            JournalEntry.description.contains(search)
+        ))
     
-    if date_from:
-        query = query.filter(JournalEntry.entry_date >= datetime.strptime(date_from, '%Y-%m-%d').date())
+    if period_id:
+        period = AccountingPeriod.query.get(period_id)
+        if period:
+            query = query.filter(and_(
+                JournalEntry.entry_date >= period.start_date,
+                JournalEntry.entry_date <= period.end_date
+            ))
     
-    if date_to:
-        query = query.filter(JournalEntry.entry_date <= datetime.strptime(date_to, '%Y-%m-%d').date())
+    query = query.order_by(desc(JournalEntry.entry_date), desc(JournalEntry.entry_number))
+    pagination = paginate_query(query, request.args.get('page', 1, type=int))
     
-    entries = query.order_by(desc(JournalEntry.entry_date)).paginate(
-        page=page, per_page=20, error_out=False
-    )
+    # Períodos para filtro
+    periods = AccountingPeriod.query.order_by(desc(AccountingPeriod.year), desc(AccountingPeriod.month)).all()
     
-    return render_template('accounting/journal_entries.html', 
-                         entries=entries,
-                         status=status,
-                         date_from=date_from,
-                         date_to=date_to)
+    return render_template('accounting/journal_entries.html',
+                         entries=pagination.items,
+                         pagination=pagination,
+                         search=search,
+                         period_id=period_id,
+                         periods=periods)
 
-@accounting_bp.route('/journal-entries/add', methods=['GET', 'POST'])
+@accounting_bp.route('/journal_entries/new', methods=['GET', 'POST'])
+@login_required
 def add_journal_entry():
-    """Crear nuevo asiento contable"""
+    """Crear nuevo asiento contable por partida doble"""
     if request.method == 'POST':
         try:
-            # Validar que las sumas de débitos y créditos sean iguales
-            total_debit = Decimal('0')
-            total_credit = Decimal('0')
+            # Generar número de asiento automático
+            last_entry = JournalEntry.query.order_by(desc(JournalEntry.id)).first()
+            entry_number = f"AST-{(last_entry.id + 1) if last_entry else 1:06d}"
             
-            # Procesar las líneas del asiento
-            details = []
-            for i in range(len(request.form.getlist('account_id'))):
-                account_id = request.form.getlist('account_id')[i]
-                debit = Decimal(request.form.getlist('debit')[i] or '0')
-                credit = Decimal(request.form.getlist('credit')[i] or '0')
-                
-                if account_id and (debit > 0 or credit > 0):
-                    details.append({
-                        'account_id': int(account_id),
-                        'debit_amount': debit,
-                        'credit_amount': credit,
-                        'description': request.form.getlist('line_description')[i],
-                        'line_number': i + 1
-                    })
-                    total_debit += debit
-                    total_credit += credit
-            
-            # Validar partida doble
-            if total_debit != total_credit:
-                flash('Error: La suma de débitos debe ser igual a la suma de créditos', 'error')
-                raise ValueError("Partida doble no balanceada")
-            
-            if not details:
-                flash('Error: Debe agregar al menos una línea al asiento', 'error')
-                raise ValueError("Sin líneas de detalle")
-            
-            # Generar número de asiento
-            entry_number = f"AST-{datetime.now().strftime('%Y%m%d')}-{JournalEntry.query.count() + 1:04d}"
-            
-            # Crear el asiento
+            # Crear asiento principal
             entry = JournalEntry(
                 entry_number=entry_number,
                 entry_date=datetime.strptime(request.form['entry_date'], '%Y-%m-%d').date(),
                 reference=request.form.get('reference', ''),
                 description=request.form['description'],
-                period_id=int(request.form['period_id']),
-                user_id=current_user.id,
-                total_debit=total_debit,
-                total_credit=total_credit,
-                source_module='MANUAL'
+                period_id=request.form.get('period_id') if request.form.get('period_id') else None,
+                created_by=current_user.id,
+                total_debit=Decimal('0'),
+                total_credit=Decimal('0')
             )
             
             db.session.add(entry)
-            db.session.flush()  # Para obtener el ID
+            db.session.flush()  # Para obtener el ID del asiento
             
-            # Crear las líneas de detalle
-            for detail_data in details:
-                detail = JournalEntryDetail(
-                    journal_entry_id=entry.id,
-                    **detail_data
-                )
-                db.session.add(detail)
+            # Procesar detalles del asiento (partida doble)
+            total_debit = Decimal('0')
+            total_credit = Decimal('0')
+            
+            # Obtener datos de débitos y créditos del formulario
+            debit_accounts = request.form.getlist('debit_account_id')
+            debit_amounts = request.form.getlist('debit_amount')
+            debit_descriptions = request.form.getlist('debit_description')
+            debit_third_parties = request.form.getlist('debit_third_party_id')
+            debit_references = request.form.getlist('debit_reference')
+            
+            credit_accounts = request.form.getlist('credit_account_id')
+            credit_amounts = request.form.getlist('credit_amount')
+            credit_descriptions = request.form.getlist('credit_description')
+            credit_third_parties = request.form.getlist('credit_third_party_id')
+            credit_references = request.form.getlist('credit_reference')
+            
+            # Procesar débitos
+            for i, account_id in enumerate(debit_accounts):
+                if account_id and i < len(debit_amounts) and debit_amounts[i]:
+                    amount = Decimal(debit_amounts[i])
+                    detail = JournalEntryDetail(
+                        journal_entry_id=entry.id,
+                        account_id=int(account_id),
+                        debit_amount=amount,
+                        credit_amount=Decimal('0'),
+                        description=debit_descriptions[i] if i < len(debit_descriptions) else '',
+                        third_party_id=int(debit_third_parties[i]) if i < len(debit_third_parties) and debit_third_parties[i] else None,
+                        reference=debit_references[i] if i < len(debit_references) else ''
+                    )
+                    db.session.add(detail)
+                    total_debit += amount
+            
+            # Procesar créditos
+            for i, account_id in enumerate(credit_accounts):
+                if account_id and i < len(credit_amounts) and credit_amounts[i]:
+                    amount = Decimal(credit_amounts[i])
+                    detail = JournalEntryDetail(
+                        journal_entry_id=entry.id,
+                        account_id=int(account_id),
+                        debit_amount=Decimal('0'),
+                        credit_amount=amount,
+                        description=credit_descriptions[i] if i < len(credit_descriptions) else '',
+                        third_party_id=int(credit_third_parties[i]) if i < len(credit_third_parties) and credit_third_parties[i] else None,
+                        reference=credit_references[i] if i < len(credit_references) else ''
+                    )
+                    db.session.add(detail)
+                    total_credit += amount
+            
+            # Validar partida doble (débitos = créditos)
+            if total_debit != total_credit:
+                raise ValueError(f'El asiento no está balanceado. Débitos: {total_debit}, Créditos: {total_credit}')
+            
+            # Actualizar totales del asiento
+            entry.total_debit = total_debit
+            entry.total_credit = total_credit
             
             db.session.commit()
             flash('Asiento contable creado exitosamente', 'success')
@@ -242,159 +256,127 @@ def add_journal_entry():
             
         except Exception as e:
             db.session.rollback()
-            flash(f'Error al crear el asiento: {str(e)}', 'error')
+            flash(f'Error al crear asiento: {str(e)}', 'error')
     
-    # Para el formulario
-    accounts = ChartOfAccounts.query.filter_by(
-        is_active=True, 
-        is_detail_account=True
-    ).order_by(ChartOfAccounts.code).all()
+    # Obtener datos para el formulario
+    accounts = ChartOfAccounts.query.filter_by(is_active=True, is_detail_account=True).order_by(ChartOfAccounts.code).all()
+    third_parties = Customer.query.filter_by(is_active=True).order_by(Customer.first_name, Customer.last_name).all()
+    periods = AccountingPeriod.query.filter_by(is_closed=False).order_by(desc(AccountingPeriod.year), desc(AccountingPeriod.month)).all()
     
-    periods = AccountingPeriod.query.filter_by(is_closed=False).order_by(
-        desc(AccountingPeriod.year), 
-        desc(AccountingPeriod.month)
-    ).all()
-    
-    return render_template('accounting/add_journal_entry.html', 
-                         accounts=accounts, 
+    return render_template('accounting/add_journal_entry.html',
+                         accounts=accounts,
+                         third_parties=third_parties,
                          periods=periods)
 
-@accounting_bp.route('/journal-entries/<int:entry_id>/post', methods=['POST'])
-def post_journal_entry(entry_id):
-    """Contabilizar un asiento (cambiar estado de DRAFT a POSTED)"""
-    try:
-        entry = JournalEntry.query.get_or_404(entry_id)
-        
-        if entry.status != 'DRAFT':
-            flash('Solo se pueden contabilizar asientos en estado borrador', 'error')
-            return redirect(url_for('accounting.journal_entries'))
-        
-        entry.status = 'POSTED'
-        entry.posted_at = datetime.utcnow()
-        
-        # Actualizar saldos de cuentas
-        for detail in entry.details:
-            balance = AccountBalance.query.filter_by(
-                account_id=detail.account_id,
-                period_id=entry.period_id
-            ).first()
-            
-            if not balance:
-                balance = AccountBalance(
-                    account_id=detail.account_id,
-                    period_id=entry.period_id
-                )
-                db.session.add(balance)
-            
-            balance.debit_total += detail.debit_amount
-            balance.credit_total += detail.credit_amount
-            
-            # Calcular saldo final según el tipo de cuenta
-            account = detail.account
-            if account.normal_balance == 'DEBIT':
-                balance.closing_balance = (balance.opening_balance + 
-                                         balance.debit_total - balance.credit_total)
-            else:
-                balance.closing_balance = (balance.opening_balance + 
-                                         balance.credit_total - balance.debit_total)
-            
-            balance.last_updated = datetime.utcnow()
-        
-        db.session.commit()
-        flash('Asiento contabilizado exitosamente', 'success')
-        
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error al contabilizar el asiento: {str(e)}', 'error')
-    
-    return redirect(url_for('accounting.journal_entries'))
+@accounting_bp.route('/journal_entries/<int:id>')
+@login_required
+def view_journal_entry(id):
+    """Ver detalle de asiento contable"""
+    entry = JournalEntry.query.get_or_404(id)
+    return render_template('accounting/view_journal_entry.html', entry=entry)
 
-@accounting_bp.route('/reports/trial-balance')
+@accounting_bp.route('/trial_balance')
+@login_required
 def trial_balance():
-    """Reporte de Balance de Comprobación"""
-    period_id = request.args.get('period_id', type=int)
+    """Balance de comprobación"""
+    period_id = request.args.get('period_id', '')
+    
+    # Si no hay período seleccionado, usar el más reciente
+    if not period_id:
+        period = AccountingPeriod.query.order_by(desc(AccountingPeriod.year), desc(AccountingPeriod.month)).first()
+        if period:
+            period_id = str(period.id)
+    
+    # Consulta para balance de comprobación
+    trial_balance_data = []
     
     if period_id:
-        period = AccountingPeriod.query.get_or_404(period_id)
-        
-        # Obtener saldos de todas las cuentas para el período
-        balances = db.session.query(
-            AccountBalance,
-            ChartOfAccounts
-        ).join(
-            ChartOfAccounts
-        ).filter(
-            AccountBalance.period_id == period_id
-        ).order_by(
-            ChartOfAccounts.code
-        ).all()
-        
-        # Calcular totales
-        total_debit = sum(b.AccountBalance.debit_total for b in balances)
-        total_credit = sum(b.AccountBalance.credit_total for b in balances)
-        
-        return render_template('accounting/trial_balance.html',
-                             balances=balances,
-                             period=period,
-                             total_debit=total_debit,
-                             total_credit=total_credit)
+        period = AccountingPeriod.query.get(period_id)
+        if period:
+            # Obtener balances por cuenta
+            query = db.session.query(
+                ChartOfAccounts.code,
+                ChartOfAccounts.name,
+                ChartOfAccounts.account_type,
+                ChartOfAccounts.normal_balance,
+                db.func.sum(JournalEntryDetail.debit_amount).label('total_debit'),
+                db.func.sum(JournalEntryDetail.credit_amount).label('total_credit')
+            ).join(JournalEntryDetail).join(JournalEntry)\
+            .filter(and_(
+                JournalEntry.entry_date >= period.start_date,
+                JournalEntry.entry_date <= period.end_date,
+                ChartOfAccounts.is_active == True
+            ))\
+            .group_by(ChartOfAccounts.id)\
+            .order_by(ChartOfAccounts.code)
+            
+            results = query.all()
+            
+            for row in results:
+                total_debit = row.total_debit or Decimal('0')
+                total_credit = row.total_credit or Decimal('0')
+                balance = total_debit - total_credit
+                
+                trial_balance_data.append({
+                    'code': row.code,
+                    'name': row.name,
+                    'account_type': row.account_type,
+                    'normal_balance': row.normal_balance,
+                    'total_debit': total_debit,
+                    'total_credit': total_credit,
+                    'balance': balance
+                })
     
-    # Mostrar selector de período
-    periods = AccountingPeriod.query.order_by(
-        desc(AccountingPeriod.year), 
-        desc(AccountingPeriod.month)
-    ).all()
+    # Períodos disponibles
+    periods = AccountingPeriod.query.order_by(desc(AccountingPeriod.year), desc(AccountingPeriod.month)).all()
     
-    return render_template('accounting/select_period.html', 
-                         periods=periods, 
-                         report_type='trial_balance')
+    return render_template('accounting/trial_balance.html',
+                         trial_balance_data=trial_balance_data,
+                         periods=periods,
+                         selected_period_id=period_id)
 
-# API endpoints para AJAX
-@accounting_bp.route('/api/accounts')
-def api_accounts():
-    """API para obtener cuentas contables (para autocomplete)"""
-    search = request.args.get('q', '')
-    
-    query = ChartOfAccounts.query.filter(
-        ChartOfAccounts.is_active == True,
-        ChartOfAccounts.is_detail_account == True
-    )
-    
-    if search:
-        query = query.filter(or_(
-            ChartOfAccounts.code.contains(search),
-            ChartOfAccounts.name.contains(search)
-        ))
-    
-    accounts = query.limit(10).all()
+@accounting_bp.route('/api/accounts/search')
+@login_required
+def api_search_accounts():
+    """API para búsqueda de cuentas contables"""
+    q = request.args.get('q', '')
+    accounts = ChartOfAccounts.query.filter(
+        and_(
+            ChartOfAccounts.is_active == True,
+            ChartOfAccounts.is_detail_account == True,
+            or_(
+                ChartOfAccounts.code.contains(q),
+                ChartOfAccounts.name.contains(q)
+            )
+        )
+    ).limit(20).all()
     
     return jsonify([{
-        'id': acc.id,
-        'code': acc.code,
-        'name': acc.name,
-        'normal_balance': acc.normal_balance
-    } for acc in accounts])
+        'id': account.id,
+        'code': account.code,
+        'name': account.name,
+        'display': f"{account.code} - {account.name}"
+    } for account in accounts])
 
-@accounting_bp.route('/api/accounts/<int:account_id>/balance')
-def api_account_balance(account_id):
-    """API para obtener el saldo actual de una cuenta"""
-    period_id = request.args.get('period_id', type=int)
+@accounting_bp.route('/api/third_parties/search')
+@login_required
+def api_search_third_parties():
+    """API para búsqueda de terceros"""
+    q = request.args.get('q', '')
+    third_parties = Customer.query.filter(
+        and_(
+            Customer.is_active == True,
+            or_(
+                Customer.first_name.contains(q),
+                Customer.last_name.contains(q),
+                Customer.document_number.contains(q)
+            )
+        )
+    ).limit(20).all()
     
-    if period_id:
-        balance = AccountBalance.query.filter_by(
-            account_id=account_id,
-            period_id=period_id
-        ).first()
-        
-        if balance:
-            return jsonify({
-                'closing_balance': float(balance.closing_balance),
-                'debit_total': float(balance.debit_total),
-                'credit_total': float(balance.credit_total)
-            })
-    
-    return jsonify({
-        'closing_balance': 0,
-        'debit_total': 0,
-        'credit_total': 0
-    })
+    return jsonify([{
+        'id': party.id,
+        'name': f"{party.first_name} {party.last_name}",
+        'document': party.document_number,
+        'display': f"{party.first_name} {party.last_name} ({party.document_number})"
+    } for party in third_parties])

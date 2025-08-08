@@ -1,145 +1,170 @@
 {% extends "base.html" %}
 
-{% block title %}Nueva Cuenta Contable{% endblock %}
+{% block title %}Nueva Cuenta Contable - SM2 Cloud{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Nueva Cuenta Contable</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{{ url_for('accounting.chart_of_accounts') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> Volver
-        </a>
-    </div>
-</div>
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-plus"></i> Nueva Cuenta Contable</h2>
+            <a href="{{ url_for('accounting.chart_of_accounts') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Plan de Cuentas
+            </a>
+        </div>
 
-<div class="card">
-    <div class="card-body">
-        <form method="POST">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="code" class="form-label">Código *</label>
-                        <input type="text" class="form-control" id="code" name="code" required
-                               placeholder="Ej: 1.1.01.001">
-                        <div class="form-text">Código único para la cuenta contable.</div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="name" class="form-label">Nombre *</label>
-                        <input type="text" class="form-control" id="name" name="name" required
-                               placeholder="Nombre de la cuenta">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body">
+                        <form method="POST">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Código de Cuenta <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="code" required
+                                               placeholder="Ej: 1105" maxlength="10">
+                                        <small class="form-text text-muted">Código único para identificar la cuenta</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nombre de la Cuenta <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="name" required
+                                               placeholder="Ej: Caja General" maxlength="200">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Tipo de Cuenta <span class="text-danger">*</span></label>
+                                        <select class="form-select" name="account_type" required>
+                                            <option value="">Seleccionar tipo</option>
+                                            <option value="ACTIVO">Activo</option>
+                                            <option value="PASIVO">Pasivo</option>
+                                            <option value="PATRIMONIO">Patrimonio</option>
+                                            <option value="INGRESOS">Ingresos</option>
+                                            <option value="GASTOS">Gastos</option>
+                                            <option value="COSTOS">Costos</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Subtipo</label>
+                                        <input type="text" class="form-control" name="account_subtype"
+                                               placeholder="Ej: Corriente, No corriente" maxlength="100">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Cuenta Padre</label>
+                                        <select class="form-select" name="parent_id">
+                                            <option value="">Sin cuenta padre</option>
+                                            {% for parent in parent_accounts %}
+                                            <option value="{{ parent.id }}">{{ parent.code }} - {{ parent.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nivel <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" name="level" value="1" min="1" max="5" required>
+                                        <small class="form-text text-muted">Nivel jerárquico (1-5)</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label class="form-label">Saldo Normal <span class="text-danger">*</span></label>
+                                        <select class="form-select" name="normal_balance" required>
+                                            <option value="">Seleccionar</option>
+                                            <option value="DEBIT">Débito</option>
+                                            <option value="CREDIT">Crédito</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Descripción</label>
+                                <textarea class="form-control" name="description" rows="3"
+                                          placeholder="Descripción detallada de la cuenta contable"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_detail_account" id="isDetail">
+                                    <label class="form-check-label" for="isDetail">
+                                        <strong>Cuenta de Detalle</strong>
+                                    </label>
+                                    <small class="form-text text-muted d-block">
+                                        Marca esta opción si la cuenta puede recibir movimientos contables directamente.
+                                        Las cuentas padre generalmente no son de detalle.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ url_for('accounting.chart_of_accounts') }}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Crear Cuenta
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
-            
-            <div class="mb-3">
-                <label for="description" class="form-label">Descripción</label>
-                <textarea class="form-control" id="description" name="description" rows="3"
-                          placeholder="Descripción detallada de la cuenta"></textarea>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="account_type" class="form-label">Tipo de Cuenta *</label>
-                        <select class="form-select" id="account_type" name="account_type" required>
-                            <option value="">Seleccionar...</option>
-                            <option value="ACTIVO">ACTIVO</option>
-                            <option value="PASIVO">PASIVO</option>
-                            <option value="PATRIMONIO">PATRIMONIO</option>
-                            <option value="INGRESO">INGRESO</option>
-                            <option value="GASTO">GASTO</option>
-                        </select>
+
+            <!-- Help Panel -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-question-circle"></i> Ayuda - Plan de Cuentas
+                        </h6>
                     </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="account_subtype" class="form-label">Subtipo</label>
-                        <input type="text" class="form-control" id="account_subtype" name="account_subtype"
-                               placeholder="Ej: CORRIENTE, NO_CORRIENTE">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="normal_balance" class="form-label">Saldo Normal *</label>
-                        <select class="form-select" id="normal_balance" name="normal_balance" required>
-                            <option value="">Seleccionar...</option>
-                            <option value="DEBIT">DEBE</option>
-                            <option value="CREDIT">HABER</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="parent_id" class="form-label">Cuenta Padre</label>
-                        <select class="form-select" id="parent_id" name="parent_id">
-                            <option value="">Sin cuenta padre</option>
-                            {% for parent in parent_accounts %}
-                            <option value="{{ parent.id }}">{{ parent.code }} - {{ parent.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label for="level" class="form-label">Nivel</label>
-                        <input type="number" class="form-control" id="level" name="level" min="1" max="5" value="1">
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <div class="form-check mt-4">
-                            <input class="form-check-input" type="checkbox" id="is_detail_account" 
-                                   name="is_detail_account" checked>
-                            <label class="form-check-label" for="is_detail_account">
-                                Acepta movimientos contables
-                            </label>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <h6 class="small">Estructura del Plan de Cuentas:</h6>
+                            <ul class="small mb-0">
+                                <li><strong>1.</strong> Activos (Débito)</li>
+                                <li><strong>2.</strong> Pasivos (Crédito)</li>
+                                <li><strong>3.</strong> Patrimonio (Crédito)</li>
+                                <li><strong>4.</strong> Ingresos (Crédito)</li>
+                                <li><strong>5.</strong> Gastos (Débito)</li>
+                                <li><strong>6.</strong> Costos (Débito)</li>
+                            </ul>
+                        </div>
+
+                        <h6 class="small">Ejemplos de Códigos:</h6>
+                        <ul class="small">
+                            <li><strong>1105</strong> - Caja</li>
+                            <li><strong>1110</strong> - Bancos</li>
+                            <li><strong>2105</strong> - Obligaciones Bancarias</li>
+                            <li><strong>3115</strong> - Capital Social</li>
+                            <li><strong>4135</strong> - Comercio al por Mayor</li>
+                            <li><strong>5195</strong> - Gastos Diversos</li>
+                        </ul>
+
+                        <div class="alert alert-warning">
+                            <small>
+                                <strong>Importante:</strong><br>
+                                - Las cuentas padre no deben ser de detalle<br>
+                                - Solo las cuentas de detalle pueden recibir movimientos<br>
+                                - El saldo normal debe coincidir con el tipo de cuenta
+                            </small>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Guardar Cuenta
-                </button>
-                <a href="{{ url_for('accounting.chart_of_accounts') }}" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> Cancelar
-                </a>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-$(document).ready(function() {
-    // Auto-llenar saldo normal basado en tipo de cuenta
-    $('#account_type').change(function() {
-        var type = $(this).val();
-        var normalBalance = '';
-        
-        switch(type) {
-            case 'ACTIVO':
-            case 'GASTO':
-                normalBalance = 'DEBIT';
-                break;
-            case 'PASIVO':
-            case 'PATRIMONIO':
-            case 'INGRESO':
-                normalBalance = 'CREDIT';
-                break;
-        }
-        
-        if (normalBalance) {
-            $('#normal_balance').val(normalBalance);
-        }
-    });
-});
-</script>
 {% endblock %}

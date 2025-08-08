@@ -373,55 +373,49 @@ class JournalEntry(db.Model):
     entry_date = db.Column(db.Date, nullable=False)
     reference = db.Column(db.String(100))  # Referencia externa (factura, recibo, etc.)
     description = db.Column(db.Text, nullable=False)
-    period_id = db.Column(db.Integer, db.ForeignKey('accounting_periods.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    
-    # Control de estado
+    period_id = db.Column(db.Integer, db.ForeignKey('accounting_periods.id'))
     status = db.Column(db.String(20), default='DRAFT')  # DRAFT, POSTED, REVERSED
     total_debit = db.Column(db.Numeric(15, 2), default=0)
     total_credit = db.Column(db.Numeric(15, 2), default=0)
-    
-    # Metadatos
-    source_module = db.Column(db.String(20))  # SALES, PURCHASES, INVENTORY, MANUAL
-    source_id = db.Column(db.Integer)  # ID del documento origen
-    
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     posted_at = db.Column(db.DateTime)
+    posted_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relaciones
     period = db.relationship('AccountingPeriod', backref='journal_entries')
-    user = db.relationship('User', backref='journal_entries')
+    creator = db.relationship('User', foreign_keys=[created_by], backref='created_entries')
+    poster = db.relationship('User', foreign_keys=[posted_by], backref='posted_entries')
     
-    __table_args__ = (
-        Index('idx_journal_date', 'entry_date'),
-        Index('idx_journal_period', 'period_id'),
-        Index('idx_journal_source', 'source_module', 'source_id'),
-    )
+    def __repr__(self):
+        return f'<JournalEntry {self.entry_number}>'
 
 class JournalEntryDetail(db.Model):
-    """Detalle de Asientos Contables - Partida Doble"""
+    """Detalles de Asientos Contables - Movimientos por Cuenta"""
     __tablename__ = 'journal_entry_details'
     
     id = db.Column(db.Integer, primary_key=True)
     journal_entry_id = db.Column(db.Integer, db.ForeignKey('journal_entries.id'), nullable=False)
     account_id = db.Column(db.Integer, db.ForeignKey('chart_of_accounts.id'), nullable=False)
-    line_number = db.Column(db.Integer, nullable=False)  # Orden de la línea
+    third_party_id = db.Column(db.Integer, db.ForeignKey('customers.id'))  # Tercero (cliente/proveedor)
     
-    # Partida doble - debe y haber
     debit_amount = db.Column(db.Numeric(15, 2), default=0)
     credit_amount = db.Column(db.Numeric(15, 2), default=0)
-    
     description = db.Column(db.Text)
-    reference = db.Column(db.String(100))  # Referencia específica de la línea
+    reference = db.Column(db.String(100))  # Documento de cruce
     
     # Relaciones
     journal_entry = db.relationship('JournalEntry', backref='details')
-    account = db.relationship('ChartOfAccounts', backref='journal_details')
+    account = db.relationship('ChartOfAccounts', backref='movements')
+    third_party = db.relationship('Customer', backref='accounting_movements')
     
     __table_args__ = (
-        Index('idx_journal_detail_account', 'account_id'),
         Index('idx_journal_detail_entry', 'journal_entry_id'),
+        Index('idx_journal_detail_account', 'account_id'),
     )
+    
+    def __repr__(self):
+        return f'<JournalDetail {self.journal_entry.entry_number} - {self.account.code}>'
 
 class AccountBalance(db.Model):
     """Saldos de Cuentas por Periodo"""

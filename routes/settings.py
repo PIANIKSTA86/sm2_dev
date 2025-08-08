@@ -293,7 +293,7 @@ def company():
         'total_products': db.session.execute(text("SELECT COUNT(*) FROM products WHERE is_active = true")).scalar() or 0,
         'total_sales': db.session.execute(text("SELECT COUNT(*) FROM sales")).scalar() or 0,
         'total_customers': db.session.execute(text("SELECT COUNT(*) FROM customers")).scalar() or 0,
-        'low_stock_items': db.session.execute(text("SELECT COUNT(*) FROM products p LEFT JOIN inventory i ON p.id = i.product_id WHERE p.is_active = true AND COALESCE(i.quantity, 0) <= p.min_stock")).scalar() or 0
+        'low_stock_items': db.session.execute(text("SELECT COUNT(*) FROM products p LEFT JOIN inventory i ON p.id = i.product_id WHERE p.is_active = true AND COALESCE(i.quantity, 0) <= 10")).scalar() or 0
     }
     
     return render_template('settings/company.html', settings=company_settings, stats=stats)

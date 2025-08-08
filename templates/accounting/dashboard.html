@@ -1,170 +1,168 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard Contable{% endblock %}
+{% block title %}Contabilidad - SM2 Cloud{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Dashboard Contable</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <a href="{{ url_for('accounting.add_journal_entry') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Nuevo Asiento
-            </a>
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-calculator"></i> Contabilidad - Partida Doble</h2>
         </div>
-    </div>
-</div>
 
-<!-- Cards de estadísticas -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ stats.total_accounts }}</h4>
-                        <p class="card-text">Cuentas Activas</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-list-alt fa-2x"></i>
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <i class="fas fa-list-alt fa-2x text-primary mb-2"></i>
+                        <h5 class="card-title">{{ stats.total_accounts }}</h5>
+                        <p class="card-text">Plan de Cuentas</p>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-info">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ stats.pending_entries }}</h4>
-                        <p class="card-text">Asientos Pendientes</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-hourglass-half fa-2x"></i>
+            <div class="col-md-3">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <i class="fas fa-file-invoice fa-2x text-success mb-2"></i>
+                        <h5 class="card-title">{{ stats.journal_entries }}</h5>
+                        <p class="card-text">Asientos Contables</p>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-success">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ stats.posted_entries }}</h4>
-                        <p class="card-text">Asientos Contabilizados</p>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-check-circle fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3">
-        <div class="card text-white bg-warning">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h4>{{ stats.current_period }}</h4>
+            <div class="col-md-3">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <i class="fas fa-calendar-alt fa-2x text-info mb-2"></i>
+                        <h5 class="card-title">{{ stats.current_period }}</h5>
                         <p class="card-text">Período Actual</p>
                     </div>
-                    <div class="align-self-center">
-                        <i class="fas fa-calendar fa-2x"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-warning">
+                    <div class="card-body text-center">
+                        <i class="fas fa-unlock fa-2x text-warning mb-2"></i>
+                        <h5 class="card-title">{{ stats.open_periods }}</h5>
+                        <p class="card-text">Períodos Abiertos</p>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5>Últimos Asientos Contables</h5>
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-plus-circle"></i> Acciones Rápidas
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('accounting.add_journal_entry') }}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Nuevo Asiento Contable
+                            </a>
+                            <a href="{{ url_for('accounting.chart_of_accounts') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-list"></i> Plan de Cuentas
+                            </a>
+                            <a href="{{ url_for('accounting.trial_balance') }}" class="btn btn-outline-info">
+                                <i class="fas fa-balance-scale"></i> Balance de Comprobación
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                {% if recent_entries %}
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Número</th>
-                                <th>Fecha</th>
-                                <th>Descripción</th>
-                                <th>Total</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for entry in recent_entries %}
-                            <tr>
-                                <td>{{ entry.entry_number }}</td>
-                                <td>{{ entry.entry_date.strftime('%d/%m/%Y') }}</td>
-                                <td>{{ entry.description[:50] }}...</td>
-                                <td>${{ '{:,.2f}'.format(entry.total_debit) }}</td>
-                                <td>
-                                    {% if entry.status == 'DRAFT' %}
-                                    <span class="badge bg-warning">Borrador</span>
-                                    {% elif entry.status == 'POSTED' %}
-                                    <span class="badge bg-success">Contabilizado</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            
+            <div class="col-lg-6">
+                {% if current_period %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-calendar"></i> Período Actual
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>{{ current_period.name }}</h6>
+                        <p class="text-muted mb-1">
+                            <strong>Desde:</strong> {{ current_period.start_date.strftime('%d/%m/%Y') }}
+                        </p>
+                        <p class="text-muted mb-3">
+                            <strong>Hasta:</strong> {{ current_period.end_date.strftime('%d/%m/%Y') }}
+                        </p>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('accounting.periods') }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-cog"></i> Gestionar Períodos
+                            </a>
+                        </div>
+                    </div>
                 </div>
                 {% else %}
-                <p class="text-muted">No hay asientos contables registrados.</p>
+                <div class="alert alert-warning">
+                    <h6><i class="fas fa-exclamation-triangle"></i> Sin Período Activo</h6>
+                    <p class="mb-2">No hay un período contable activo. Debe crear un período antes de registrar asientos.</p>
+                    <a href="{{ url_for('accounting.create_period') }}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-plus"></i> Crear Período
+                    </a>
+                </div>
                 {% endif %}
             </div>
         </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5>Accesos Rápidos</h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('accounting.chart_of_accounts') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-list-alt"></i> Plan de Cuentas
-                    </a>
-                    <a href="{{ url_for('accounting.journal_entries') }}" class="btn btn-outline-secondary">
-                        <i class="fas fa-book"></i> Libro Diario
-                    </a>
-                    <a href="{{ url_for('accounting.periods') }}" class="btn btn-outline-info">
-                        <i class="fas fa-calendar-alt"></i> Períodos Contables
-                    </a>
-                    <a href="{{ url_for('accounting.trial_balance') }}" class="btn btn-outline-success">
-                        <i class="fas fa-balance-scale"></i> Balance de Comprobación
-                    </a>
+
+        <!-- Recent Journal Entries -->
+        {% if recent_entries %}
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-clock"></i> Últimos Asientos Contables
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Número</th>
+                                        <th>Fecha</th>
+                                        <th>Descripción</th>
+                                        <th>Débito</th>
+                                        <th>Crédito</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for entry in recent_entries %}
+                                    <tr>
+                                        <td>{{ entry.entry_number }}</td>
+                                        <td>{{ entry.entry_date.strftime('%d/%m/%Y') }}</td>
+                                        <td>{{ entry.description[:50] }}{% if entry.description|length > 50 %}...{% endif %}</td>
+                                        <td class="text-end">${{ "%.2f"|format(entry.total_debit) }}</td>
+                                        <td class="text-end">${{ "%.2f"|format(entry.total_credit) }}</td>
+                                        <td>
+                                            <span class="badge {{ 'bg-success' if entry.status == 'POSTED' else 'bg-warning' if entry.status == 'DRAFT' else 'bg-secondary' }}">
+                                                {{ 'Contabilizado' if entry.status == 'POSTED' else 'Borrador' if entry.status == 'DRAFT' else 'Anulado' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('accounting.view_journal_entry', id=entry.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> Ver
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-3 text-end">
+                            <a href="{{ url_for('accounting.journal_entries') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-list"></i> Ver Todos los Asientos
+                            </a>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-        
-        {% if current_period %}
-        <div class="card mt-3">
-            <div class="card-header">
-                <h6>Período Actual</h6>
-            </div>
-            <div class="card-body">
-                <p><strong>{{ current_period.name }}</strong></p>
-                <p class="small text-muted">
-                    {{ current_period.start_date.strftime('%d/%m/%Y') }} - 
-                    {{ current_period.end_date.strftime('%d/%m/%Y') }}
-                </p>
-                {% if current_period.is_closed %}
-                <span class="badge bg-danger">Cerrado</span>
-                {% else %}
-                <span class="badge bg-success">Abierto</span>
-                {% endif %}
             </div>
         </div>
         {% endif %}
