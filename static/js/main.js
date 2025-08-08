@@ -44,6 +44,53 @@ function initializeApp() {
     console.log('Inventory System initialized successfully');
 }
 
+// Search functionality
+function clearSearch() {
+    const searchInput = document.querySelector('input[type="search"]');
+    if (searchInput) {
+        searchInput.value = '';
+        searchInput.focus();
+        // Trigger search to show all results
+        const event = new Event('input', { bubbles: true });
+        searchInput.dispatchEvent(event);
+    }
+}
+
+// Show loading overlay
+function showLoading() {
+    loadingCount++;
+    if (loadingCount === 1) {
+        $('#loadingOverlay').removeClass('d-none');
+    }
+}
+
+// Hide loading overlay
+function hideLoading() {
+    loadingCount = Math.max(0, loadingCount - 1);
+    if (loadingCount === 0) {
+        $('#loadingOverlay').addClass('d-none');
+    }
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : `alert-${type}`;
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show position-fixed" 
+             style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('body').append(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        notification.alert('close');
+    }, 5000);
+}
+
 // Setup global event listeners
 function setupEventListeners() {
     // Handle loading states

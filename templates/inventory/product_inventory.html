@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Inventario de {{ product.name }} - SM2 Cloud{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-boxes"></i> 
+                Inventario de {{ product.name }}
+            </h2>
+            <a href="{{ url_for('inventory.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Inventario
+            </a>
+        </div>
+
+        <!-- Product Info Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i> Información del Producto
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>SKU:</strong> {{ product.sku }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Código de Barras:</strong> {{ product.barcode or 'N/A' }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Categoría:</strong> {{ product.category.name if product.category else 'N/A' }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Marca:</strong> {{ product.brand.name if product.brand else 'N/A' }}
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <strong>Descripción:</strong> {{ product.description or 'Sin descripción' }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Unidad de Medida:</strong> {{ product.unit_measure }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inventory by Warehouse -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-warehouse"></i> Inventario por Bodega
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Bodega</th>
+                                <th>Cantidad Actual</th>
+                                <th>Stock Mínimo</th>
+                                <th>Stock Máximo</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inventory in inventories %}
+                            <tr>
+                                <td>
+                                    <strong>{{ inventory.warehouse.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ inventory.warehouse.address or 'Sin dirección' }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if inventory.quantity <= inventory.min_stock %}danger{% elif inventory.quantity >= inventory.max_stock %}warning{% else %}success{% endif %} fs-6">
+                                        {{ inventory.quantity }}
+                                    </span>
+                                </td>
+                                <td>{{ inventory.min_stock }}</td>
+                                <td>{{ inventory.max_stock }}</td>
+                                <td>
+                                    {% if inventory.quantity <= inventory.min_stock %}
+                                        <span class="badge bg-danger">Stock Bajo</span>
+                                    {% elif inventory.quantity >= inventory.max_stock %}
+                                        <span class="badge bg-warning">Stock Alto</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Normal</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="adjustInventory({{ inventory.id }}, '{{ inventory.warehouse.name }}', {{ inventory.quantity }})">
+                                        <i class="fas fa-edit"></i> Ajustar
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    <i class="fas fa-box-open fa-2x mb-2"></i><br>
+                                    No hay registros de inventario para este producto
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Inventory Summary -->
+        {% if inventories %}
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-cubes text-primary"></i>
+                        </h5>
+                        <h2>{{ total_quantity }}</h2>
+                        <p class="card-text">Total en Existencia</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-warehouse text-info"></i>
+                        </h5>
+                        <h2>{{ inventories|length }}</h2>
+                        <p class="card-text">Bodegas con Stock</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="fas fa-exclamation-triangle text-warning"></i>
+                        </h5>
+                        <h2>{{ low_stock_count }}</h2>
+                        <p class="card-text">Bodegas con Stock Bajo</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Adjust Inventory Modal -->
+<div class="modal fade" id="adjustModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="adjustForm" method="POST" action="{{ url_for('inventory.adjust_inventory') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit"></i> Ajustar Inventario
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="inventory_id" name="inventory_id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Bodega:</strong></label>
+                        <p id="warehouse_name" class="form-text"></p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="current_quantity" class="form-label">Cantidad Actual</label>
+                        <input type="number" class="form-control" id="current_quantity" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="new_quantity" class="form-label">Nueva Cantidad *</label>
+                        <input type="number" class="form-control" id="new_quantity" name="new_quantity" min="0" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Motivo del Ajuste</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3" placeholder="Describe el motivo del ajuste..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar Ajuste
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function adjustInventory(inventoryId, warehouseName, currentQuantity) {
+    document.getElementById('inventory_id').value = inventoryId;
+    document.getElementById('warehouse_name').textContent = warehouseName;
+    document.getElementById('current_quantity').value = currentQuantity;
+    document.getElementById('new_quantity').value = currentQuantity;
+    
+    const modal = new bootstrap.Modal(document.getElementById('adjustModal'));
+    modal.show();
+}
+
+// Reset form when modal is closed
+document.getElementById('adjustModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('adjustForm').reset();
+});
+</script>
+{% endblock %}

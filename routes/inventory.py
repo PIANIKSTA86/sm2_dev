@@ -182,11 +182,16 @@ def edit_product(id):
 @login_required
 def product_inventory(id):
     product = Product.query.get_or_404(id)
-    inventory_records = Inventory.query.filter_by(product_id=id).join(Warehouse).all()
+    inventories = Inventory.query.filter_by(product_id=id).join(Warehouse).all()
+    
+    total_quantity = sum(inv.quantity for inv in inventories)
+    low_stock_count = sum(1 for inv in inventories if inv.quantity <= inv.min_stock)
     
     return render_template('inventory/product_inventory.html',
                          product=product,
-                         inventory_records=inventory_records)
+                         inventories=inventories,
+                         total_quantity=total_quantity,
+                         low_stock_count=low_stock_count)
 
 @inventory_bp.route('/search_products')
 @login_required
