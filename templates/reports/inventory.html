@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte de Inventario - SM2 Cloud{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-boxes"></i> Reporte de Inventario
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Filtros -->
+                <form method="GET" class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <label for="warehouse_id" class="form-label">Bodega</label>
+                        <select class="form-select" id="warehouse_id" name="warehouse_id">
+                            <option value="">Todas las bodegas</option>
+                            {% for warehouse in warehouses %}
+                            <option value="{{ warehouse.id }}" {{ 'selected' if warehouse_id == warehouse.id }}>
+                                {{ warehouse.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="category_id" class="form-label">Categoría</label>
+                        <select class="form-select" id="category_id" name="category_id">
+                            <option value="">Todas las categorías</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}" {{ 'selected' if category_id == category.id }}>
+                                {{ category.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check mt-4">
+                            <input class="form-check-input" type="checkbox" id="show_zero" name="show_zero" 
+                                   {{ 'checked' if show_zero }} value="1">
+                            <label class="form-check-label" for="show_zero">
+                                Mostrar productos con stock 0
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary d-block">
+                            <i class="fas fa-search"></i> Filtrar
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Resumen -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h6 class="card-title">Total Items</h6>
+                                <h4>{{ total_items }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h6 class="card-title">Valor Total Inventario</h6>
+                                <h4>${{ "{:,.2f}".format(total_value) }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if inventory_data %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="inventoryTable">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Producto</th>
+                                <th>Categoría</th>
+                                <th>Marca</th>
+                                <th>Bodega</th>
+                                <th>Cantidad</th>
+                                <th>Stock Mín.</th>
+                                <th>Stock Máx.</th>
+                                <th>Costo</th>
+                                <th>Precio</th>
+                                <th>Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in inventory_data %}
+                            <tr class="{{ 'table-warning' if item.quantity <= item.min_stock else '' }}">
+                                <td>{{ item.sku }}</td>
+                                <td>{{ item.name }}</td>
+                                <td>{{ item.category_name or '-' }}</td>
+                                <td>{{ item.brand_name or '-' }}</td>
+                                <td>{{ item.warehouse_name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.min_stock }}</td>
+                                <td>{{ item.max_stock }}</td>
+                                <td>${{ "{:,.2f}".format(item.cost) }}</td>
+                                <td>${{ "{:,.2f}".format(item.price1) }}</td>
+                                <td>${{ "{:,.2f}".format(item.inventory_value) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5>No hay datos disponibles</h5>
+                    <p class="text-muted">No se encontraron productos en inventario con los filtros seleccionados.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#inventoryTable').DataTable({
+        language: {
+            url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+        },
+        order: [[1, 'asc']], // Ordenar por nombre del producto
+        pageLength: 25
+    });
+});
+</script>
+{% endblock %}

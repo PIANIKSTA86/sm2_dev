@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Resumen de Ventas - SM2 Cloud{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar"></i> Resumen de Ventas
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Filtros -->
+                <form method="GET" class="row g-3 mb-4">
+                    <div class="col-md-2">
+                        <label for="start_date" class="form-label">Fecha Inicio</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" 
+                               value="{{ start_date }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="end_date" class="form-label">Fecha Fin</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" 
+                               value="{{ end_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="customer_id" class="form-label">Cliente</label>
+                        <select class="form-select" id="customer_id" name="customer_id">
+                            <option value="">Todos los clientes</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.id }}" {{ 'selected' if customer_id == customer.id }}>
+                                {{ customer.full_name or customer.company or 'Cliente General' }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="warehouse_id" class="form-label">Bodega</label>
+                        <select class="form-select" id="warehouse_id" name="warehouse_id">
+                            <option value="">Todas las bodegas</option>
+                            {% for warehouse in warehouses %}
+                            <option value="{{ warehouse.id }}" {{ 'selected' if warehouse_id == warehouse.id }}>
+                                {{ warehouse.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary d-block">
+                            <i class="fas fa-search"></i> Filtrar
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Tarjetas de resumen -->
+                {% if summary %}
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <h6 class="card-title">Total Ventas</h6>
+                                <h4>${{ "{:,.2f}".format(summary.total_sales) }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h6 class="card-title">Número de Ventas</h6>
+                                <h4>{{ summary.total_transactions }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <h6 class="card-title">Venta Promedio</h6>
+                                <h4>${{ "{:,.2f}".format(summary.avg_sale) }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <h6 class="card-title">Total Impuestos</h6>
+                                <h4>${{ "{:,.2f}".format(summary.total_tax) }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Gráfica de ventas diarias -->
+                {% if daily_sales %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Ventas Diarias</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="dailySalesChart" height="100"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Productos más vendidos -->
+                {% if top_products %}
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Productos Más Vendidos</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th>SKU</th>
+                                                <th>Cantidad Vendida</th>
+                                                <th>Total Ventas</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for product in top_products %}
+                                            <tr>
+                                                <td>{{ product.product_name }}</td>
+                                                <td>{{ product.sku }}</td>
+                                                <td>{{ product.total_quantity }}</td>
+                                                <td>${{ "{:,.2f}".format(product.total_revenue) }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if daily_sales %}
+<script>
+// Gráfica de ventas diarias
+const ctx = document.getElementById('dailySalesChart').getContext('2d');
+const dailySalesChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [{% for sale in daily_sales %}'{{ sale.sale_date.strftime("%d/%m") }}'{{ ',' if not loop.last }}{% endfor %}],
+        datasets: [{
+            label: 'Ventas Diarias',
+            data: [{% for sale in daily_sales %}{{ sale.daily_total }}{{ ',' if not loop.last }}{% endfor %}],
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString();
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte Detallado de Ventas - SM2 Cloud{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line"></i> Reporte Detallado de Ventas
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Filtros -->
+                <form method="GET" class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <label for="start_date" class="form-label">Fecha Inicio</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" 
+                               value="{{ start_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="end_date" class="form-label">Fecha Fin</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" 
+                               value="{{ end_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="customer_id" class="form-label">Cliente</label>
+                        <select class="form-select" id="customer_id" name="customer_id">
+                            <option value="">Todos los clientes</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.id }}" {{ 'selected' if customer_id == customer.id }}>
+                                {{ customer.full_name or customer.company or 'Cliente General' }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary d-block">
+                            <i class="fas fa-search"></i> Filtrar
+                        </button>
+                    </div>
+                </form>
+
+                {% if sales_data %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="salesTable">
+                        <thead>
+                            <tr>
+                                <th>Factura</th>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th>Subtotal</th>
+                                <th>Impuesto</th>
+                                <th>Descuento</th>
+                                <th>Total</th>
+                                <th>Método Pago</th>
+                                <th>Bodega</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in sales_data %}
+                            <tr>
+                                <td>{{ sale.invoice_number }}</td>
+                                <td>{{ sale.created_at.strftime('%d/%m/%Y %H:%M') if sale.created_at else '-' }}</td>
+                                <td>{{ sale.customer or 'Cliente General' }}</td>
+                                <td>${{ "{:,.2f}".format(sale.subtotal) }}</td>
+                                <td>${{ "{:,.2f}".format(sale.tax_amount) }}</td>
+                                <td>${{ "{:,.2f}".format(sale.discount_amount) }}</td>
+                                <td><strong>${{ "{:,.2f}".format(sale.total) }}</strong></td>
+                                <td>{{ sale.payment_method }}</td>
+                                <td>{{ sale.warehouse }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5>No hay datos disponibles</h5>
+                    <p class="text-muted">No se encontraron ventas en el período seleccionado.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#salesTable').DataTable({
+        language: {
+            url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+        },
+        order: [[1, 'desc']], // Ordenar por fecha
+        pageLength: 25
+    });
+});
+</script>
+{% endblock %}
