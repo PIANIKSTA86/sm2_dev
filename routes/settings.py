@@ -307,3 +307,93 @@ def company():
     }
     
     return render_template('settings/company.html', settings=company_settings, stats=stats)
+
+@settings_bp.route('/product_groups', methods=['GET', 'POST'])
+@admin_required
+def product_groups():
+    if request.method == 'POST':
+        try:
+            group_id = request.form.get('group_id')
+            if group_id:
+                # Edit existing group
+                group = ProductGroup.query.get_or_404(group_id)
+                group.name = request.form['name']
+                group.description = request.form.get('description')
+                group.is_active = bool(request.form.get('is_active'))
+                flash('Grupo de productos actualizado exitosamente', 'success')
+            else:
+                # Create new group
+                group = ProductGroup(
+                    name=request.form['name'],
+                    description=request.form.get('description'),
+                    is_active=bool(request.form.get('is_active', True))
+                )
+                db.session.add(group)
+                flash('Grupo de productos creado exitosamente', 'success')
+            
+            db.session.commit()
+            return redirect(url_for('settings.product_groups'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al procesar grupo: {str(e)}', 'error')
+    
+    groups = ProductGroup.query.all()
+    return render_template('settings/product_groups.html', groups=groups)
+
+@settings_bp.route('/product_lines', methods=['GET', 'POST']) 
+@admin_required
+def product_lines():
+    if request.method == 'POST':
+        try:
+            line_id = request.form.get('line_id')
+            if line_id:
+                # Edit existing line
+                line = ProductLine.query.get_or_404(line_id)
+                line.name = request.form['name']
+                line.description = request.form.get('description')
+                line.is_active = bool(request.form.get('is_active'))
+                flash('Línea de productos actualizada exitosamente', 'success')
+            else:
+                # Create new line
+                line = ProductLine(
+                    name=request.form['name'],
+                    description=request.form.get('description'),
+                    is_active=bool(request.form.get('is_active', True))
+                )
+                db.session.add(line)
+                flash('Línea de productos creada exitosamente', 'success')
+            
+            db.session.commit()
+            return redirect(url_for('settings.product_lines'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al procesar línea: {str(e)}', 'error')
+    
+    lines = ProductLine.query.all()
+    return render_template('settings/product_lines.html', lines=lines)
+
+@settings_bp.route('/product_groups/<int:id>/toggle', methods=['POST'])
+@admin_required
+def toggle_product_group_status(id):
+    try:
+        group = ProductGroup.query.get_or_404(id)
+        group.is_active = not group.is_active
+        db.session.commit()
+        return jsonify({'success': True, 'is_active': group.is_active})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})
+
+@settings_bp.route('/product_lines/<int:id>/toggle', methods=['POST'])
+@admin_required  
+def toggle_product_line_status(id):
+    try:
+        line = ProductLine.query.get_or_404(id)
+        line.is_active = not line.is_active
+        db.session.commit()
+        return jsonify({'success': True, 'is_active': line.is_active})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)})

@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Líneas de Productos - SM2 Cloud{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-sitemap"></i> Líneas de Productos</h2>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#lineModal">
+                <i class="fas fa-plus"></i> Nueva Línea
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="linesTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for line in lines %}
+                            <tr>
+                                <td>{{ line.id }}</td>
+                                <td><strong>{{ line.name }}</strong></td>
+                                <td>{{ line.description or '-' }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if line.is_active else 'secondary' }}">
+                                        {{ 'Activo' if line.is_active else 'Inactivo' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-primary" 
+                                                onclick="editLine({{ line.id }}, '{{ line.name }}', '{{ line.description or '' }}', {{ line.is_active|tojson }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-info" 
+                                                onclick="toggleLineStatus({{ line.id }})">
+                                            <i class="fas fa-toggle-{{ 'on' if line.is_active else 'off' }}"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">
+                                    <i class="fas fa-sitemap fa-2x mb-2"></i><br>
+                                    No hay líneas de productos registradas
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Line Modal -->
+<div class="modal fade" id="lineModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="lineForm" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-sitemap"></i> <span id="modalTitle">Nueva Línea</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="line_id" name="line_id">
+                    
+                    <div class="mb-3">
+                        <label for="line_name" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="line_name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="line_description" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="line_description" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="line_is_active" name="is_active" checked>
+                            <label class="form-check-label" for="line_is_active">
+                                Línea activa
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    if ($('#linesTable').length) {
+        $('#linesTable').DataTable({
+            order: [[1, 'asc']],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+            }
+        });
+    }
+});
+
+function editLine(id, name, description, isActive) {
+    $('#line_id').val(id);
+    $('#line_name').val(name);
+    $('#line_description').val(description);
+    $('#line_is_active').prop('checked', isActive);
+    $('#modalTitle').text('Editar Línea');
+    $('#lineModal').modal('show');
+}
+
+function toggleLineStatus(id) {
+    if (confirm('¿Está seguro de cambiar el estado de esta línea?')) {
+        fetch(`/settings/product_lines/${id}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cambiar el estado de la línea');
+        });
+    }
+}
+
+// Reset form when modal is closed
+$('#lineModal').on('hidden.bs.modal', function() {
+    $('#lineForm')[0].reset();
+    $('#line_id').val('');
+    $('#modalTitle').text('Nueva Línea');
+});
+</script>
+{% endblock %}
