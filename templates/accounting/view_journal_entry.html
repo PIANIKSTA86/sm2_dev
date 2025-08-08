@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Asiento Contable {{ entry.entry_number }} - SM2 Cloud{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-file-invoice"></i> Asiento Contable {{ entry.entry_number }}</h2>
+            <div class="d-flex gap-2">
+                {% if entry.status == 'DRAFT' %}
+                <button class="btn btn-warning" onclick="postEntry({{ entry.id }}, '{{ entry.entry_number }}')">
+                    <i class="fas fa-check"></i> Contabilizar
+                </button>
+                <button class="btn btn-outline-danger" onclick="deleteEntry({{ entry.id }}, '{{ entry.entry_number }}')">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+                {% endif %}
+                <a href="{{ url_for('accounting.journal_entries') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver a Asientos
+                </a>
+            </div>
+        </div>
+
+        <!-- Entry Header -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Información del Asiento</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>Número:</strong><br>
+                        <span class="text-primary">{{ entry.entry_number }}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Fecha:</strong><br>
+                        {{ entry.entry_date.strftime('%d/%m/%Y') }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Estado:</strong><br>
+                        <span class="badge {{ 'bg-success' if entry.status == 'POSTED' else 'bg-warning' if entry.status == 'DRAFT' else 'bg-secondary' }}">
+                            {{ 'Contabilizado' if entry.status == 'POSTED' else 'Borrador' if entry.status == 'DRAFT' else 'Anulado' }}
+                        </span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Período:</strong><br>
+                        {% if entry.period %}
+                        <span class="badge bg-info">{{ entry.period.name }}</span>
+                        {% else %}
+                        <span class="text-muted">Sin período</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <strong>Referencia:</strong><br>
+                        {{ entry.reference or 'Sin referencia' }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Descripción:</strong><br>
+                        {{ entry.description }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Entry Details -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Detalle del Asiento (Partida Doble)</h5>
+            </div>
+            <div class="card-body">
+                {% if entry.details %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Cuenta</th>
+                                <th>Descripción</th>
+                                <th>Tercero</th>
+                                <th>Referencia</th>
+                                <th class="text-end">Débito</th>
+                                <th class="text-end">Crédito</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detail in entry.details %}
+                            <tr>
+                                <td>
+                                    <strong>{{ detail.account.code }}</strong><br>
+                                    <small class="text-muted">{{ detail.account.name }}</small>
+                                </td>
+                                <td>{{ detail.description or '-' }}</td>
+                                <td>
+                                    {% if detail.third_party %}
+                                    {{ detail.third_party.first_name }} {{ detail.third_party.last_name }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>{{ detail.reference or '-' }}</td>
+                                <td class="text-end">
+                                    {% if detail.debit_amount > 0 %}
+                                    <span class="text-success fw-bold">${{ "{:,.2f}".format(detail.debit_amount) }}</span>
+                                    {% else %}
+                                    <span class="text-muted">$0.00</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if detail.credit_amount > 0 %}
+                                    <span class="text-danger fw-bold">${{ "{:,.2f}".format(detail.credit_amount) }}</span>
+                                    {% else %}
+                                    <span class="text-muted">$0.00</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr class="fw-bold">
+                                <td colspan="4" class="text-end">TOTALES:</td>
+                                <td class="text-end text-success">
+                                    ${{ "{:,.2f}".format(entry.total_debit) }}
+                                </td>
+                                <td class="text-end text-danger">
+                                    ${{ "{:,.2f}".format(entry.total_credit) }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="6" class="text-center">
+                                    {% if entry.total_debit == entry.total_credit %}
+                                    <span class="text-success">
+                                        <i class="fas fa-check-circle"></i> Asiento Balanceado
+                                    </span>
+                                    {% else %}
+                                    <span class="text-danger">
+                                        <i class="fas fa-exclamation-triangle"></i> 
+                                        Asiento Desbalanceado - Diferencia: ${{ "{:,.2f}".format((entry.total_debit - entry.total_credit)|abs) }}
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-warning text-center">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Sin Detalles</h5>
+                    <p>Este asiento contable no tiene movimientos de cuentas registrados.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Audit Trail (if posted) -->
+        {% if entry.status == 'POSTED' and entry.posted_at %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Información de Contabilización</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Contabilizado el:</strong><br>
+                        {{ entry.posted_at.strftime('%d/%m/%Y %H:%M:%S') }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Creado el:</strong><br>
+                        {{ entry.created_at.strftime('%d/%m/%Y %H:%M:%S') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function postEntry(entryId, entryNumber) {
+    if (confirm(`¿Contabilizar el asiento ${entryNumber}?\n\nUna vez contabilizado no se podrá modificar.`)) {
+        // Aquí se implementaría la llamada AJAX para contabilizar
+        console.log('Contabilizando asiento:', entryId);
+        alert('Funcionalidad de contabilización pendiente de implementar');
+    }
+}
+
+function deleteEntry(entryId, entryNumber) {
+    if (confirm(`¿Eliminar el asiento ${entryNumber}?\n\nEsta acción no se puede deshacer.`)) {
+        // Aquí se implementaría la llamada AJAX para eliminar
+        console.log('Eliminando asiento:', entryId);
+        alert('Funcionalidad de eliminación pendiente de implementar');
+    }
+}
+</script>
+{% endblock %}

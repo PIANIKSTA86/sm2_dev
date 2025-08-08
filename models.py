@@ -349,20 +349,12 @@ class AccountingPeriod(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)  # Ej: "Enero 2024"
     year = db.Column(db.Integer, nullable=False)
-    month = db.Column(db.Integer, nullable=False)
+    month = db.Column(db.Integer)  # Opcional para periodos anuales
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
     is_closed = db.Column(db.Boolean, default=False)
     closed_date = db.Column(db.DateTime)
-    closed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relaciones
-    closer = db.relationship('User', backref='closed_periods')
-    
-    __table_args__ = (
-        db.UniqueConstraint('year', 'month'),
-    )
 
 class JournalEntry(db.Model):
     """Asientos Contables"""
@@ -377,15 +369,11 @@ class JournalEntry(db.Model):
     status = db.Column(db.String(20), default='DRAFT')  # DRAFT, POSTED, REVERSED
     total_debit = db.Column(db.Numeric(15, 2), default=0)
     total_credit = db.Column(db.Numeric(15, 2), default=0)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     posted_at = db.Column(db.DateTime)
-    posted_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     
     # Relaciones
     period = db.relationship('AccountingPeriod', backref='journal_entries')
-    creator = db.relationship('User', foreign_keys=[created_by], backref='created_entries')
-    poster = db.relationship('User', foreign_keys=[posted_by], backref='posted_entries')
     
     def __repr__(self):
         return f'<JournalEntry {self.entry_number}>'

@@ -13,19 +13,41 @@ accounting_bp = Blueprint('accounting', __name__)
 @accounting_bp.route('/')
 def index():
     """Dashboard principal de contabilidad"""
-    # Obtener período contable actual
-    current_period = AccountingPeriod.query.filter_by(is_closed=False).order_by(desc(AccountingPeriod.start_date)).first()
+    # Obtener período contable actual con manejo de errores
+    current_period = None
+    try:
+        current_period = AccountingPeriod.query.filter_by(is_closed=False).order_by(desc(AccountingPeriod.start_date)).first()
+    except:
+        pass
     
-    # Estadísticas básicas
+    # Estadísticas básicas con manejo de errores
+    try:
+        total_accounts = ChartOfAccounts.query.filter_by(is_active=True).count()
+    except:
+        total_accounts = 0
+        
+    try:
+        journal_entries_count = JournalEntry.query.count()
+    except:
+        journal_entries_count = 0
+        
+    try:
+        open_periods_count = AccountingPeriod.query.filter_by(is_closed=False).count()
+    except:
+        open_periods_count = 0
+    
     stats = {
-        'total_accounts': ChartOfAccounts.query.filter_by(is_active=True).count(),
-        'journal_entries': JournalEntry.query.count(),
+        'total_accounts': total_accounts,
+        'journal_entries': journal_entries_count,
         'current_period': current_period.name if current_period else 'Sin período activo',
-        'open_periods': AccountingPeriod.query.filter_by(is_closed=False).count()
+        'open_periods': open_periods_count
     }
     
-    # Últimos asientos contables
-    recent_entries = JournalEntry.query.order_by(desc(JournalEntry.created_at)).limit(10).all()
+    # Últimos asientos contables (solo mostrar si existen)
+    try:
+        recent_entries = JournalEntry.query.order_by(desc(JournalEntry.created_at)).limit(10).all()
+    except:
+        recent_entries = []
     
     return render_template('accounting/dashboard.html', 
                          stats=stats, 
@@ -50,14 +72,15 @@ def chart_of_accounts():
         query = query.filter(ChartOfAccounts.account_type == account_type)
     
     query = query.order_by(ChartOfAccounts.code)
-    pagination = paginate_query(query, request.args.get('page', 1, type=int))
+    page = request.args.get('page', 1, type=int)
+    accounts, pagination = paginate_query(query, page=page)
     
     # Tipos de cuenta para filtro
     account_types = db.session.query(ChartOfAccounts.account_type.distinct()).all()
     account_types = [t[0] for t in account_types]
     
     return render_template('accounting/chart_of_accounts.html',
-                         accounts=pagination.items,
+                         accounts=accounts,
                          pagination=pagination,
                          search=search,
                          account_type=account_type,
@@ -109,7 +132,7 @@ def create_period():
             period = AccountingPeriod(
                 name=request.form['name'],
                 year=int(request.form['year']),
-                month=int(request.form['month']),
+                month=int(request.form['month']) if request.form['month'] else None,
                 start_date=datetime.strptime(request.form['start_date'], '%Y-%m-%d').date(),
                 end_date=datetime.strptime(request.form['end_date'], '%Y-%m-%d').date(),
                 is_closed=False
@@ -150,13 +173,14 @@ def journal_entries():
             ))
     
     query = query.order_by(desc(JournalEntry.entry_date), desc(JournalEntry.entry_number))
-    pagination = paginate_query(query, request.args.get('page', 1, type=int))
+    page = request.args.get('page', 1, type=int)
+    entries, pagination = paginate_query(query, page=page)
     
     # Períodos para filtro
     periods = AccountingPeriod.query.order_by(desc(AccountingPeriod.year), desc(AccountingPeriod.month)).all()
     
     return render_template('accounting/journal_entries.html',
-                         entries=pagination.items,
+                         entries=entries,
                          pagination=pagination,
                          search=search,
                          period_id=period_id,
@@ -178,7 +202,7 @@ def add_journal_entry():
                 reference=request.form.get('reference', ''),
                 description=request.form['description'],
                 period_id=request.form.get('period_id') if request.form.get('period_id') else None,
-                created_by=1,  # Usuario por defecto
+
                 total_debit=Decimal('0'),
                 total_credit=Decimal('0')
             )
