@@ -77,7 +77,8 @@ def restore_backup(backup_file_path):
         
         # Clear existing data (be careful!)
         # This is a simplified version - in production, you'd want more sophisticated handling
-        db.session.execute('SET foreign_key_checks = 0')
+        # PostgreSQL doesn't use SET foreign_key_checks, we'll handle this differently
+        pass
         
         # Define restore order (considering foreign key dependencies)
         restore_order = [
@@ -118,7 +119,7 @@ def restore_backup(backup_file_path):
                 
                 db.session.flush()
         
-        db.session.execute('SET foreign_key_checks = 1')
+        # Foreign key constraints re-enabled automatically in PostgreSQL
         db.session.commit()
         
         current_app.logger.info(f'Backup restored from: {backup_file_path}')

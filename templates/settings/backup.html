@@ -12,9 +12,111 @@
             </a>
         </div>
 
-        <div class="alert alert-info">
-            <h6><i class="fas fa-info-circle"></i> Función en Desarrollo</h6>
-            <p class="mb-0">El módulo de respaldo de datos está en desarrollo. Pronto estará disponible para crear y restaurar copias de seguridad.</p>
+        <!-- Crear Backup -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-download"></i> Crear Respaldo
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Generar un archivo de respaldo de toda la base de datos. Este archivo incluirá todos los productos, clientes, ventas, compras e inventario.</p>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Importante:</strong> El respaldo no incluye datos de usuarios por seguridad.
+                        </div>
+                        
+                        <form method="POST" action="{{ url_for('settings.create_backup_route') }}">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-download"></i> Crear Respaldo
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Restaurar Backup -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-upload"></i> Restaurar Respaldo
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p>Restaurar la base de datos desde un archivo de respaldo previamente creado.</p>
+                        
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>¡Precaución!</strong> Esta acción eliminará todos los datos actuales y los reemplazará con los del archivo de respaldo.
+                        </div>
+                        
+                        <form method="POST" action="{{ url_for('settings.restore_backup_route') }}" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="backup_file" class="form-label">Seleccionar archivo de respaldo (.json)</label>
+                                <input type="file" class="form-control" id="backup_file" name="backup_file" accept=".json" required>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="confirm_restore" required>
+                                <label class="form-check-label" for="confirm_restore">
+                                    Confirmo que entiendo que esta acción eliminará todos los datos actuales
+                                </label>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-danger btn-lg" onclick="return confirm('¿Está seguro de que desea restaurar el respaldo? Esta acción no se puede deshacer.')">
+                                <i class="fas fa-upload"></i> Restaurar Respaldo
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle"></i> Información sobre Respaldos
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>¿Qué incluye el respaldo?</h6>
+                                <ul>
+                                    <li>Bodegas y configuraciones</li>
+                                    <li>Categorías y marcas</li>
+                                    <li>Productos e inventario</li>
+                                    <li>Clientes y proveedores</li>
+                                    <li>Ventas y compras</li>
+                                    <li>Números de serie</li>
+                                    <li>Configuraciones del sistema</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>¿Qué NO incluye?</h6>
+                                <ul>
+                                    <li>Datos de usuarios y contraseñas</li>
+                                    <li>Sesiones activas</li>
+                                    <li>Archivos temporales</li>
+                                    <li>Logs del sistema</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-lightbulb"></i>
+                            <strong>Recomendación:</strong> Realice respaldos periódicos, especialmente antes de realizar cambios importantes en el sistema.
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
