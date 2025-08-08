@@ -11,6 +11,54 @@ settings_bp = Blueprint('settings', __name__)
 def index():
     return render_template('settings/index.html')
 
+@settings_bp.route('/electronic_signature', methods=['GET', 'POST'])
+@login_required
+def electronic_signature():
+    """Configuración de requisitos de firma electrónica para documentos"""
+    if request.method == 'POST':
+        try:
+            # Configuraciones de firma electrónica
+            signature_settings = [
+                ('require_electronic_signature', request.form.get('require_electronic_signature') == 'on'),
+                ('signature_certificate_path', request.form.get('signature_certificate_path', '')),
+                ('signature_certificate_password', request.form.get('signature_certificate_password', '')),
+                ('signature_provider', request.form.get('signature_provider', '')),
+                ('signature_timestamp_server', request.form.get('signature_timestamp_server', '')),
+                ('signature_algorithm', request.form.get('signature_algorithm', 'SHA-256')),
+                ('validate_certificate', request.form.get('validate_certificate') == 'on'),
+                ('require_timestamp', request.form.get('require_timestamp') == 'on'),
+                ('certificate_subject', request.form.get('certificate_subject', '')),
+                ('certificate_issuer', request.form.get('certificate_issuer', '')),
+                ('signature_reason', request.form.get('signature_reason', 'Documento electrónico validado por SM2 Cloud')),
+                ('signature_location', request.form.get('signature_location', ''))
+            ]
+            
+            for key, value in signature_settings:
+                setting = Setting.query.filter_by(key=key).first()
+                if setting:
+                    setting.value = str(value) if not isinstance(value, bool) else ('true' if value else 'false')
+                else:
+                    setting = Setting(key=key, value=str(value) if not isinstance(value, bool) else ('true' if value else 'false'), category='electronic_signature')
+                    db.session.add(setting)
+            
+            db.session.commit()
+            flash('Configuración de firma electrónica actualizada exitosamente', 'success')
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al guardar configuración: {str(e)}', 'error')
+    
+    # Obtener configuraciones actuales
+    signature_settings = {}
+    settings = Setting.query.filter_by(category='electronic_signature').all()
+    for setting in settings:
+        if setting.value.lower() in ['true', 'false']:
+            signature_settings[setting.key] = setting.value.lower() == 'true'
+        else:
+            signature_settings[setting.key] = setting.value
+    
+    return render_template('settings/electronic_signature.html', settings=signature_settings)
+
 @settings_bp.route('/warehouses', methods=['GET', 'POST'])
 @admin_required
 def warehouses():
@@ -244,7 +292,7 @@ def company():
     stats = {
         'total_products': db.session.execute(text("SELECT COUNT(*) FROM products WHERE is_active = true")).scalar() or 0,
         'total_sales': db.session.execute(text("SELECT COUNT(*) FROM sales")).scalar() or 0,
-        'total_customers': db.session.execute(text("SELECT COUNT(*) FROM customers WHERE customer_type = 'customer'")).scalar() or 0,
+        'total_customers': db.session.execute(text("SELECT COUNT(*) FROM customers")).scalar() or 0,
         'low_stock_items': db.session.execute(text("SELECT COUNT(*) FROM products p LEFT JOIN inventory i ON p.id = i.product_id WHERE p.is_active = true AND COALESCE(i.quantity, 0) <= p.min_stock")).scalar() or 0
     }
     

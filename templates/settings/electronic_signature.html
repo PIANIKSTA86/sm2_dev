@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}Firma Electrónica - SM2 Cloud{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-signature"></i> Configuración de Firma Electrónica</h2>
+            <a href="{{ url_for('settings.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a Configuración
+            </a>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-certificate"></i> Requisitos de Firma para Documentos Electrónicos
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
+                            <!-- Configuración General -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6 class="text-primary border-bottom pb-2">
+                                        <i class="fas fa-cog"></i> Configuración General
+                                    </h6>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="requireSignature" 
+                                               name="require_electronic_signature" 
+                                               {{ 'checked' if settings.get('require_electronic_signature', False) }}>
+                                        <label class="form-check-label" for="requireSignature">
+                                            <strong>Requerir Firma Electrónica</strong>
+                                            <br><small class="text-muted">Activar firma obligatoria para documentos</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="validateCertificate" 
+                                               name="validate_certificate"
+                                               {{ 'checked' if settings.get('validate_certificate', True) }}>
+                                        <label class="form-check-label" for="validateCertificate">
+                                            <strong>Validar Certificado</strong>
+                                            <br><small class="text-muted">Verificar validez del certificado digital</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Certificado Digital -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6 class="text-primary border-bottom pb-2">
+                                        <i class="fas fa-certificate"></i> Certificado Digital
+                                    </h6>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Ruta del Certificado <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="signature_certificate_path" 
+                                               value="{{ settings.get('signature_certificate_path', '') }}"
+                                               placeholder="/path/to/certificate.p12">
+                                        <div class="form-text">Ruta completa al archivo del certificado (.p12, .pfx)</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Contraseña del Certificado</label>
+                                        <input type="password" class="form-control" name="signature_certificate_password"
+                                               value="{{ settings.get('signature_certificate_password', '') }}"
+                                               placeholder="Contraseña del certificado">
+                                        <div class="form-text">Contraseña para acceder al certificado digital</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Sujeto del Certificado</label>
+                                        <input type="text" class="form-control" name="certificate_subject"
+                                               value="{{ settings.get('certificate_subject', '') }}"
+                                               placeholder="CN=Nombre Empresa, O=Organización">
+                                        <div class="form-text">Información del sujeto del certificado</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Emisor del Certificado</label>
+                                        <input type="text" class="form-control" name="certificate_issuer"
+                                               value="{{ settings.get('certificate_issuer', '') }}"
+                                               placeholder="CN=Autoridad Certificadora">
+                                        <div class="form-text">Entidad que emitió el certificado</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Configuración Técnica -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6 class="text-primary border-bottom pb-2">
+                                        <i class="fas fa-shield-alt"></i> Configuración Técnica
+                                    </h6>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Algoritmo de Firma</label>
+                                        <select class="form-select" name="signature_algorithm">
+                                            <option value="SHA-256" {{ 'selected' if settings.get('signature_algorithm', 'SHA-256') == 'SHA-256' }}>SHA-256 (Recomendado)</option>
+                                            <option value="SHA-1" {{ 'selected' if settings.get('signature_algorithm') == 'SHA-1' }}>SHA-1</option>
+                                            <option value="SHA-512" {{ 'selected' if settings.get('signature_algorithm') == 'SHA-512' }}>SHA-512</option>
+                                        </select>
+                                        <div class="form-text">Algoritmo de hash para la firma digital</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Proveedor de Firma</label>
+                                        <select class="form-select" name="signature_provider">
+                                            <option value="" {{ 'selected' if not settings.get('signature_provider') }}>Seleccionar proveedor</option>
+                                            <option value="SIIGO" {{ 'selected' if settings.get('signature_provider') == 'SIIGO' }}>SIIGO</option>
+                                            <option value="ALIADDO" {{ 'selected' if settings.get('signature_provider') == 'ALIADDO' }}>ALIADDO</option>
+                                            <option value="CARVAJAL" {{ 'selected' if settings.get('signature_provider') == 'CARVAJAL' }}>CARVAJAL</option>
+                                            <option value="FACTURA1" {{ 'selected' if settings.get('signature_provider') == 'FACTURA1' }}>FACTURA1</option>
+                                            <option value="ECOM" {{ 'selected' if settings.get('signature_provider') == 'ECOM' }}>ECOM</option>
+                                            <option value="CUSTOM" {{ 'selected' if settings.get('signature_provider') == 'CUSTOM' }}>Personalizado</option>
+                                        </select>
+                                        <div class="form-text">Proveedor tecnológico autorizado por DIAN</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Timestamp y Validación -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6 class="text-primary border-bottom pb-2">
+                                        <i class="fas fa-clock"></i> Timestamp y Validación
+                                    </h6>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="requireTimestamp" 
+                                               name="require_timestamp"
+                                               {{ 'checked' if settings.get('require_timestamp', True) }}>
+                                        <label class="form-check-label" for="requireTimestamp">
+                                            <strong>Requerir Timestamp</strong>
+                                            <br><small class="text-muted">Marca de tiempo confiable en documentos</small>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Servidor de Timestamp</label>
+                                        <input type="url" class="form-control" name="signature_timestamp_server"
+                                               value="{{ settings.get('signature_timestamp_server', '') }}"
+                                               placeholder="http://timestamp.server.com">
+                                        <div class="form-text">URL del servidor de timestamp autorizado</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Información de la Firma -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6 class="text-primary border-bottom pb-2">
+                                        <i class="fas fa-info-circle"></i> Información de la Firma
+                                    </h6>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Razón de la Firma</label>
+                                        <input type="text" class="form-control" name="signature_reason"
+                                               value="{{ settings.get('signature_reason', 'Documento electrónico validado por SM2 Cloud') }}"
+                                               placeholder="Razón de la firma">
+                                        <div class="form-text">Descripción del propósito de la firma</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Ubicación de la Firma</label>
+                                        <input type="text" class="form-control" name="signature_location"
+                                               value="{{ settings.get('signature_location', '') }}"
+                                               placeholder="Ciudad, País">
+                                        <div class="form-text">Ubicación geográfica donde se realiza la firma</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-primary" onclick="testSignatureConfig()">
+                                    <i class="fas fa-test-tube"></i> Probar Configuración
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Guardar Configuración
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Información -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-info-circle"></i> Información Importante
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-certificate"></i> Certificado Digital</h6>
+                            <p class="small mb-0">
+                                Para firmar documentos electrónicos necesita un certificado digital válido emitido por una autoridad certificadora reconocida.
+                            </p>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle"></i> Requisitos DIAN</h6>
+                            <p class="small mb-0">
+                                Los documentos electrónicos deben cumplir con los requisitos técnicos establecidos por la DIAN para facturación electrónica.
+                            </p>
+                        </div>
+                        
+                        <div class="alert alert-success">
+                            <h6><i class="fas fa-shield-alt"></i> Seguridad</h6>
+                            <p class="small mb-0">
+                                La firma electrónica garantiza la autenticidad, integridad y no repudio de los documentos generados.
+                            </p>
+                        </div>
+
+                        <h6 class="mt-4">Proveedores Autorizados DIAN:</h6>
+                        <ul class="list-unstyled small">
+                            <li><i class="fas fa-check text-success"></i> SIIGO S.A.</li>
+                            <li><i class="fas fa-check text-success"></i> ALIADDO SAS</li>
+                            <li><i class="fas fa-check text-success"></i> CARVAJAL TECNOLOGÍA</li>
+                            <li><i class="fas fa-check text-success"></i> FACTURA1 S.A.S.</li>
+                            <li><i class="fas fa-check text-success"></i> ECOM S.A.S.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Estado del Sistema -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-chart-line"></i> Estado del Sistema
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small">Firma Electrónica:</span>
+                            <span class="badge {{ 'bg-success' if settings.get('require_electronic_signature', False) else 'bg-secondary' }}">
+                                {{ 'Activada' if settings.get('require_electronic_signature', False) else 'Desactivada' }}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small">Validación de Certificado:</span>
+                            <span class="badge {{ 'bg-success' if settings.get('validate_certificate', True) else 'bg-warning' }}">
+                                {{ 'Activada' if settings.get('validate_certificate', True) else 'Desactivada' }}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="small">Timestamp:</span>
+                            <span class="badge {{ 'bg-success' if settings.get('require_timestamp', True) else 'bg-warning' }}">
+                                {{ 'Requerido' if settings.get('require_timestamp', True) else 'Opcional' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function testSignatureConfig() {
+    // Mostrar modal de prueba
+    const modal = new bootstrap.Modal(document.getElementById('testModal') || createTestModal());
+    modal.show();
+    
+    // Simular prueba de configuración
+    setTimeout(() => {
+        const resultDiv = document.getElementById('testResult');
+        const certificatePath = document.querySelector('input[name="signature_certificate_path"]').value;
+        
+        if (certificatePath.trim() === '') {
+            resultDiv.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    Por favor configure la ruta del certificado antes de realizar la prueba.
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Prueba de configuración:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Certificado: ${certificatePath}</li>
+                        <li>Algoritmo: ${document.querySelector('select[name="signature_algorithm"]').value}</li>
+                        <li>Proveedor: ${document.querySelector('select[name="signature_provider"]').value || 'No configurado'}</li>
+                        <li>Estado: <span class="badge bg-success">Configuración válida</span></li>
+                    </ul>
+                </div>
+            `;
+        }
+    }, 1000);
+}
+
+function createTestModal() {
+    const modalHtml = `
+        <div class="modal fade" id="testModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title"><i class="fas fa-test-tube"></i> Prueba de Configuración</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="testResult">
+                            <div class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Probando...</span>
+                                </div>
+                                <p class="mt-2">Verificando configuración de firma electrónica...</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    return document.getElementById('testModal');
+}
+</script>
+{% endblock %}

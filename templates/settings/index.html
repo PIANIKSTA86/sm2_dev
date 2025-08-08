@@ -61,6 +61,17 @@
                         </a>
                         {% endif %}
                         
+                        <a href="{{ url_for('settings.electronic_signature') }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Firma Electrónica</h6>
+                                    <p class="mb-1">Configurar requisitos de firma para documentos</p>
+                                    <small class="text-muted">Certificados, algoritmos y validación</small>
+                                </div>
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </a>
+                        
                         <a href="{{ url_for('settings.backup') }}" class="list-group-item list-group-item-action">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
