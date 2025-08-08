@@ -26,6 +26,8 @@ class Warehouse(db.Model):
     code = db.Column(db.String(20), unique=True, nullable=False)
     address = db.Column(db.Text)
     phone = db.Column(db.String(20))
+    email = db.Column(db.String(120))
+    manager = db.Column(db.String(100))
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

@@ -71,14 +71,16 @@ def warehouses():
                 warehouse.name = request.form['name']
                 warehouse.address = request.form.get('address')
                 warehouse.manager = request.form.get('manager')
-                warehouse.phone = request.form.get('phone')
+                warehouse.phone = request.form.get('phone')  
                 warehouse.email = request.form.get('email')
                 warehouse.is_active = bool(request.form.get('is_active'))
                 flash('Bodega actualizada exitosamente', 'success')
             else:
-                # Create new warehouse
+                # Create new warehouse  
+                warehouse_name = request.form['name']
                 warehouse = Warehouse(
-                    name=request.form['name'],
+                    name=warehouse_name,
+                    code=warehouse_name[:3].upper() + str(Warehouse.query.count() + 1).zfill(3),
                     address=request.form.get('address'),
                     manager=request.form.get('manager'),
                     phone=request.form.get('phone'),
@@ -133,6 +135,7 @@ def edit_warehouse(id):
             warehouse.code = request.form['code']
             warehouse.address = request.form.get('address')
             warehouse.phone = request.form.get('phone')
+            warehouse.is_active = bool(request.form.get('is_active'))
             
             db.session.commit()
             
